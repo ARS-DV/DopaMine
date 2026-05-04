@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "bootstrap-icons": "^1.13.1",
+    "chart.js": "^4.5.1",
+    "pinia": "^3.0.4"
+  }
+}
