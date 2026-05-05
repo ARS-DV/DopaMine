@@ -5,14 +5,14 @@ include 'db.php';
 if ($method == 'GET') {
     if (isset($_GET['admin'])) {
         // Solo admin puede ver todos
-        $result = $conn->query("SELECT id, nickName, email, energy FROM users");
+        $result = $conn->query("SELECT id, nickName, email, energy FROM user");
         $users = [];
         while ($row = $result->fetch_assoc()) $users[] = $row;
         echo json_encode($users, JSON_UNESCAPED_UNICODE);
 
     } elseif (isset($_GET['id'])) {
         $id = intval($_GET['id']);
-        $stmt = $conn->prepare("SELECT id, nickName, email, energy FROM users WHERE id = ?");
+        $stmt = $conn->prepare("SELECT id, nickName, email, energy FROM user WHERE id = ?");
         $stmt->bind_param("i", $id);
         $stmt->execute();
         echo json_encode($stmt->get_result()->fetch_assoc());
@@ -25,7 +25,7 @@ if ($method == 'POST' && isset($_GET['login'])) {
     $email = trim($data['email']);
     $pswd  = $data['pswd'];
 
-    $stmt = $conn->prepare("SELECT id, nickName, email, pswd, energy, role FROM users WHERE email = ?");
+    $stmt = $conn->prepare("SELECT id, nickName, email, pswd, energy, role FROM user WHERE email = ?");
     $stmt->bind_param("s", $email);
     $stmt->execute();
     $user = $stmt->get_result()->fetch_assoc();
@@ -52,7 +52,7 @@ if ($method == 'POST' && !isset($_GET['login'])) {
     $role     = 'user'; // por defecto
 
     $stmt = $conn->prepare(
-        "INSERT INTO users (nickName, email, pswd, role) VALUES (?, ?, ?, ?)"
+        "INSERT INTO user (nickName, email, pswd, role) VALUES (?, ?, ?, ?)"
     );
     $stmt->bind_param("ssss", $nickName, $email, $pswd, $role);
 
@@ -71,19 +71,19 @@ if ($method == 'PUT') {
     // Cambiar contraseña (admin)
     if (isset($data['pswd'])) {
         $hashed = password_hash($data['pswd'], PASSWORD_BCRYPT);
-        $stmt   = $conn->prepare("UPDATE users SET pswd = ? WHERE id = ?");
+        $stmt   = $conn->prepare("UPDATE user SET pswd = ? WHERE id = ?");
         $stmt->bind_param("si", $hashed, $id);
 
     // Cambiar nickName (admin o el propio usuario)
     } elseif (isset($data['nickName'])) {
         $nick = $data['nickName'];
-        $stmt = $conn->prepare("UPDATE users SET nickName = ? WHERE id = ?");
+        $stmt = $conn->prepare("UPDATE user SET nickName = ? WHERE id = ?");
         $stmt->bind_param("si", $nick, $id);
 
     // Cambiar energy (el propio usuario)
     } elseif (isset($data['energy'])) {
         $energy = $data['energy'];
-        $stmt   = $conn->prepare("UPDATE users SET energy = ? WHERE id = ?");
+        $stmt   = $conn->prepare("UPDATE user SET energy = ? WHERE id = ?");
         $stmt->bind_param("si", $energy, $id);
     }
 
@@ -97,7 +97,7 @@ if ($method == 'PUT') {
 // DELETE — admin elimina usuario
 if ($method == 'DELETE') {
     $id   = intval($_GET['id']);
-    $stmt = $conn->prepare("DELETE FROM users WHERE id = ?");
+    $stmt = $conn->prepare("DELETE FROM user WHERE id = ?");
     $stmt->bind_param("i", $id);
     echo $stmt->execute()
         ? json_encode(['status' => 'success', 'message' => 'User deleted'])

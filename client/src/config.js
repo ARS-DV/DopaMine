@@ -1,0 +1,1 @@
+export const rutaApi = 'http://localhost/DopaMine_Server/api.php'
