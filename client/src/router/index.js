@@ -1,23 +1,36 @@
-import { createRouter, createWebHistory } from 'vue-router'
-import Login from '@/views/login.vue'
-import Singup from '@/views/singup.vue'
+import { createRouter, createWebHistory } from "vue-router";
+import Login from "@/views/login.vue";
+import Singup from "@/views/singup.vue";
+import HomeView from "@/views/HomeView.vue";
+import TasksView from "@/views/TasksView.vue";
+import HabitsView from "@/views/HabitsView.vue";
+import RoutinesView from "@/views/RoutinesView.vue";
+import CalendarView from "@/views/CalendarView.vue";
+import ProgressView from "@/views/ProgressView.vue";
+import NewHabitView from '@/views/NewHabitView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-    
-     {
-      path: '/login',
-      name: 'login',
+    {
+      path: "/login",
+      name: "login",
       component: Login,
     },
-     {
-      path: '/singup',
-      name: 'singup',
+    {
+      path: "/singup",
+      name: "singup",
       component: Singup,
     },
+    { path: "/", component: HomeView },
+    { path: "/tasks", component: TasksView },
+    { path: "/habits", component: HabitsView },
+    { path: "/routines", component: RoutinesView },
+    { path: "/calendar", component: CalendarView },
+    { path: "/progress", component: ProgressView },
+    { path: '/habits/new', name: 'habits.new', component: NewHabitView, meta: { hideHeader: true } }
   ],
-})
+});
 
 /*router.beforeEach((to, from, next) => {
   
@@ -50,4 +63,4 @@ const router = createRouter({
     next(); //si es cualquier otra puede entrar
   }
 });*/
-export default router
+export default router;

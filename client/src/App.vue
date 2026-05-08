@@ -5,7 +5,7 @@ import AppFooter from './components/AppFooter.vue'
 
 <template>
     <div class="layout">
-     <AppHeader/>
+     <AppHeader v-if="!$route.meta.hideHeader"/>
       <RouterView/>
      <AppFooter/>
     </div>
