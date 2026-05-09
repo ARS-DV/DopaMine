@@ -231,13 +231,14 @@ if ($method === 'PUT') {
 }
 
 
-// PATCH — marcar hábito como hecho hoy
+// PATCH — marcar hábito (0 = no, 1 = tried, 2 = done)
 if ($method === 'PATCH') {
     $id    = intval($_GET['id']);
     $data  = json_decode(file_get_contents('php://input'), true);
-    $done  = intval($data['done']);
+    $done  = intval($data['done']); // 0, 1 o 2
     $today = date('Y-m-d');
 
+    // Insertar o actualizar habit_record de hoy
     $stmt = $conn->prepare(
         "SELECT id FROM habit_record WHERE habit_id = ? AND dateOfHabit = ?"
     );
@@ -262,12 +263,60 @@ if ($method === 'PATCH') {
         $stmt2->close();
     }
 
+    // Calcular racha actual — solo cuentan los done = 2 (completado)
+    // tried (1) no rompe la racha pero tampoco la alimenta
+    $stmt3 = $conn->prepare("
+        SELECT dateOfHabit, done FROM habit_record
+        WHERE habit_id = ?
+        ORDER BY dateOfHabit DESC
+    ");
+    $stmt3->bind_param("i", $id);
+    $stmt3->execute();
+    $result = $stmt3->get_result();
+    $stmt3->close();
+
+    $streak   = 0;
+    $expected = new DateTime($today);
+
+    while ($row = $result->fetch_assoc()) {
+        $date      = new DateTime($row['dateOfHabit']);
+        $row_done  = intval($row['done']);
+
+        if ($date == $expected) {
+            if ($row_done == 2) {
+                // Completado: suma a la racha y avanza
+                $streak++;
+                $expected->modify('-1 day');
+            } elseif ($row_done == 1) {
+                // Intentado: no suma pero tampoco rompe, avanza sin sumar
+                $expected->modify('-1 day');
+            } else {
+                // No hecho: rompe la racha
+                break;
+            }
+        } elseif ($date < $expected) {
+            // Hay un hueco de días sin registro: rompe la racha
+            break;
+        }
+    }
+
+    // Actualizar best_streak si la racha actual la supera
+    if ($done == 2) {
+        $stmt4 = $conn->prepare(
+            "UPDATE habit SET best_streak = GREATEST(best_streak, ?) WHERE id = ?"
+        );
+        $stmt4->bind_param("ii", $streak, $id);
+        $stmt4->execute();
+        $stmt4->close();
+    }
+
     echo json_encode([
-        'status'  => 'success',
-        'message' => $done ? 'Habit marked as done' : 'Habit unmarked',
-        'done'    => (bool)$done
+        'status'         => 'success',
+        'done'           => $done,
+        'current_streak' => $streak
     ]);
 }
+
 
 
 // DELETE — eliminar hábito

@@ -45,6 +45,28 @@ async function toggleDone(habit) {
     habit.done_today = !!newDone;
   }
 }
+const doneLabel = (val) => {
+  if (val == 2) return "✓ Done";
+  if (val == 1) return "~ Tried";
+  return "○ Pending";
+};
+
+// Cicla entre 0 → 1 → 2 → 0
+async function cycleState(habit) {
+  const next = (parseInt(habit.done_today ?? 0) + 1) % 3;
+
+  const res = await fetch(`${rutaApi}?entity=habits&id=${habit.id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ done: next }),
+  });
+  const data = await res.json();
+
+  if (data.status === "success") {
+    habit.done_today = next;
+    habit.streak = data.current_streak;
+  }
+}
 
 async function deleteHabit(id) {
   if (!confirm("Delete this habit?")) return;
@@ -133,12 +155,9 @@ onMounted(() => {
       <!-- LISTA DE HÁBITOS -->
       <ul v-else>
         <li v-for="habit in filteredHabits" :key="habit.id">
-          <input
-            type="checkbox"
-            :checked="habit.done_today"
-            :disabled="!isTodayScheduled(habit)"
-            @change="isTodayScheduled(habit) && toggleDone(habit)"
-          />
+          <button @click="cycleState(habit)">
+            {{ doneLabel(habit.done_today) }}
+          </button>
           <span v-if="!isTodayScheduled(habit)">(not today)</span>
 
           <span>{{ habit.icon }} {{ habit.title }}</span>
