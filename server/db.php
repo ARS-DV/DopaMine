@@ -1,8 +1,8 @@
 <?php
 $host     = "localhost";
-$user     = "root";
+$user     = "youruser";
 $password = "";
-$dbname   = "dopaminedb";
+$dbname   = "dbname";
 
 $conn = new mysqli($host, $user, $password, $dbname);
 $conn->set_charset("utf8mb4");

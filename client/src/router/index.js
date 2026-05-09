@@ -9,7 +9,7 @@ import CalendarView from "@/views/CalendarView.vue";
 import ProgressView from "@/views/ProgressView.vue";
 import NewHabitView from "@/views/NewHabitView.vue";
 import NewTaskView from "@/views/NewTaskView.vue";
-
+import NewRoutineView from "@/views/NewRoutineView.vue";
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -57,6 +57,11 @@ const router = createRouter({
       path: '/tasks/new', 
       component: NewTaskView, 
       meta: { hideHeader: true } },
+  { 
+      path: '/routines/new', 
+      component: NewRoutineView, 
+      meta: { hideHeader: true } 
+    },
   ],
 });
 
