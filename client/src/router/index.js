@@ -7,7 +7,8 @@ import HabitsView from "@/views/HabitsView.vue";
 import RoutinesView from "@/views/RoutinesView.vue";
 import CalendarView from "@/views/CalendarView.vue";
 import ProgressView from "@/views/ProgressView.vue";
-import NewHabitView from '@/views/NewHabitView.vue'
+import NewHabitView from "@/views/NewHabitView.vue";
+import NewTaskView from "@/views/NewTaskView.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -22,13 +23,40 @@ const router = createRouter({
       name: "singup",
       component: Singup,
     },
-    { path: "/", component: HomeView },
-    { path: "/tasks", component: TasksView },
-    { path: "/habits", component: HabitsView },
-    { path: "/routines", component: RoutinesView },
-    { path: "/calendar", component: CalendarView },
-    { path: "/progress", component: ProgressView },
-    { path: '/habits/new', name: 'habits.new', component: NewHabitView, meta: { hideHeader: true } }
+    {
+      path: "/",
+      component: HomeView,
+    },
+    {
+      path: "/tasks",
+      component: TasksView,
+    },
+    {
+      path: "/habits",
+      component: HabitsView,
+    },
+    { 
+      path: "/routines", 
+      component: RoutinesView 
+    },
+    { 
+      path: "/calendar", 
+      component: CalendarView 
+    },
+    { 
+      path: "/progress", 
+      component: ProgressView 
+    },
+    {
+      path: "/habits/new",
+      name: "habits.new",
+      component: NewHabitView,
+      meta: { hideHeader: true },
+    },
+    { 
+      path: '/tasks/new', 
+      component: NewTaskView, 
+      meta: { hideHeader: true } },
   ],
 });
 
