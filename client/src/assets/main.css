@@ -1,35 +1,658 @@
-@import './base.css';
+/* ============================================================
+   DOPAMINE APP — main.css
+   CSS global: variables, base, componentes compartidos
+   Importar DESPUÉS de Bootstrap en main.js
+   ============================================================ */
 
-#app {
-  max-width: 1280px;
+
+/* ── VARIABLES DE PALETA ──────────────────────────────────── */
+
+:root {
+  /* Fondos */
+  --bg-base:        #FAF7F2;
+  --bg-subtle:      #F3EDE3;
+  --bg-card:        #FFFFFF;
+
+  /* Vainilla */
+  --vanilla-light:  #EDD9A3;
+  --vanilla-mid:    #C9A96E;
+  --vanilla-deep:   #A07840;
+
+  /* Canela */
+  --cinnamon-soft:  #B07848;
+  --cinnamon-mid:   #8B5E3C;
+  --cinnamon-dark:  #5C3317;
+
+  /* Botones */
+  --btn-primary:    #5C3317;
+  --btn-primary-h:  #3E2010;
+  --btn-cancel:     #EDD9A3;
+  --btn-cancel-h:   #C9A96E;
+  --btn-info:       #6B8FA3;
+  --btn-info-h:     #4D7089;
+
+  /* Estados semánticos */
+  --state-ok:       #7A9E7E;
+  --state-ok-bg:    #EBF4EC;
+  --state-warn:     #C9A030;
+  --state-warn-bg:  #FBF3DC;
+  --state-error:    #B05050;
+  --state-error-bg: #F9EAEA;
+  --state-info:     #6B8FA3;
+  --state-info-bg:  #E8F1F6;
+
+  /* Tipografía */
+  --font-mono:      'DM Mono', monospace;
+  --font-serif:     'Fraunces', serif;
+}
+
+
+/* ── BASE ────────────────────────────────────────────────── */
+
+body {
+  background-color: var(--bg-subtle);
+  font-family: var(--font-mono);
+  color: var(--cinnamon-dark);
+  min-height: 100vh;
+}
+
+/* Layout principal: header + contenido + footer */
+.app-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.app-main {
+  flex: 1;
+}
+
+/* Contenedor máximo centrado, usado en todas las vistas */
+.page-container {
+  max-width: 860px;
   margin: 0 auto;
-  padding: 2rem;
-  font-weight: normal;
+  padding: 2.5rem 1.5rem 4rem;
 }
 
-a,
-.green {
+/* Contenedor más ancho para Progress y Calendar */
+.page-container-wide {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 4rem;
+
+}
+/* ── TIPOGRAFÍA ──────────────────────────────────────────── */
+
+/* Título de página — patrón compartido en todas las vistas */
+.page-title {
+  font-family: var(--font-serif);
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--cinnamon-dark);
+  letter-spacing: -0.5px;
+  line-height: 1;
+}
+
+.page-title em {
+  display: block;
+  font-style: italic;
+  font-weight: 300;
+  color: var(--cinnamon-mid);
+  font-size: 1rem;
+  margin-bottom: 0.3rem;
+}
+
+/* Título de sección dentro de una vista */
+.section-title {
+  font-family: var(--font-serif);
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--cinnamon-mid);
+  margin-bottom: 1rem;
+}
+
+
+/* ── BOTONES ─────────────────────────────────────────────── */
+
+/* Base compartida para todos los botones custom */
+.btn-dopamine {
+  font-family: var(--font-mono);
+  border-radius: 8px;
+  font-size: 0.75rem;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+  padding: 0.6rem 1.1rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.btn-dopamine:active {
+  transform: scale(0.97);
+}
+
+/* Aceptar / Confirmar / Crear */
+.btn-dopamine-primary {
+  background: var(--btn-primary);
+  color: var(--bg-base);
+  box-shadow: 0 3px 12px rgba(92, 51, 23, 0.22);
+}
+
+.btn-dopamine-primary:hover {
+  background: var(--btn-primary-h);
+  color: var(--bg-base);
+  transform: translateY(-1px);
+  box-shadow: 0 5px 16px rgba(92, 51, 23, 0.28);
+}
+
+/* Cancelar / Volver */
+.btn-dopamine-cancel {
+  background: var(--btn-cancel);
+  color: var(--cinnamon-dark);
+  border: 1.5px solid var(--vanilla-mid);
+}
+
+.btn-dopamine-cancel:hover {
+  background: var(--btn-cancel-h);
+  color: var(--cinnamon-dark);
+}
+
+/* Peligro / Eliminar */
+.btn-dopamine-danger {
+  background: var(--state-error-bg);
+  color: var(--state-error);
+  border: 1.5px solid #D07070;
+}
+
+.btn-dopamine-danger:hover {
+  background: #F0D5D5;
+  color: var(--state-error);
+}
+
+/* Ghost / Secundario */
+.btn-dopamine-ghost {
+  background: transparent;
+  color: var(--cinnamon-mid);
+  border: 1.5px solid var(--vanilla-mid);
+}
+
+.btn-dopamine-ghost:hover {
+  background: var(--vanilla-light);
+  color: var(--cinnamon-dark);
+}
+
+/* Info / Neutro */
+.btn-dopamine-info {
+  background: var(--btn-info);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(107, 143, 163, 0.25);
+}
+
+.btn-dopamine-info:hover {
+  background: var(--btn-info-h);
+  color: #fff;
+}
+
+/* Botón flotante (FAB) */
+.fab {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--btn-primary);
+  color: var(--bg-base);
+  border: none;
+  font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(92, 51, 23, 0.30);
+  transition: background 0.15s, transform 0.15s;
+  z-index: 1020;
+}
+
+.fab:hover {
+  background: var(--btn-primary-h);
+  transform: scale(1.08);
+}
+
+
+/* ── CARDS ───────────────────────────────────────────────── */
+
+/* Card base — usada en tareas, hábitos y rutinas */
+.dopamine-card {
+  background: var(--bg-base);
+  border: 1.5px solid var(--vanilla-mid);
+  border-left: 4px solid var(--vanilla-mid);
+  border-radius: 10px;
+  padding: 1rem 1.1rem;
+  box-shadow: 0 1px 6px rgba(92, 51, 23, 0.06);
+  transition: background 0.15s, box-shadow 0.15s;
+}
+
+.dopamine-card:hover {
+  background: var(--bg-card);
+  box-shadow: 0 4px 16px rgba(92, 51, 23, 0.10);
+}
+
+/* Variantes de borde izquierdo por dificultad/estado */
+.dopamine-card.border-hard   { border-left-color: var(--state-error); }
+.dopamine-card.border-medium { border-left-color: var(--state-warn); }
+.dopamine-card.border-easy   { border-left-color: var(--state-ok); }
+.dopamine-card.border-done   {
+  background: var(--state-ok-bg);
+  border-color: #B8D8BC;
+  border-left-color: var(--state-ok);
+  opacity: 0.78;
+}
+.dopamine-card.border-tried  {
+  border-left-color: var(--state-warn);
+  background: var(--state-warn-bg);
+  border-color: #D4C080;
+}
+
+/* Borde por frecuencia — para hábitos y rutinas */
+.dopamine-card.freq-daily   { border-left-color: var(--cinnamon-mid); }
+.dopamine-card.freq-weekly  { border-left-color: var(--btn-info); }
+.dopamine-card.freq-monthly { border-left-color: var(--vanilla-deep); }
+
+
+/* ── FORMULARIOS ─────────────────────────────────────────── */
+
+/* Override de Bootstrap para los inputs */
+.dopamine-input,
+.dopamine-textarea,
+.dopamine-select {
+  background-color: var(--vanilla-light) !important;
+  border: 1.5px solid var(--vanilla-mid) !important;
+  border-radius: 8px !important;
+  font-family: var(--font-mono) !important;
+  font-size: 0.75rem !important;
+  color: var(--cinnamon-dark) !important;
+}
+
+.dopamine-input::placeholder,
+.dopamine-textarea::placeholder {
+  color: var(--cinnamon-soft) !important;
+}
+
+.dopamine-input:focus,
+.dopamine-textarea:focus,
+.dopamine-select:focus {
+  border-color: var(--cinnamon-mid) !important;
+  box-shadow: none !important;
+  background-color: var(--vanilla-light) !important;
+  color: var(--cinnamon-dark) !important;
+}
+
+/* Label de formulario */
+.form-label-dopamine {
+  font-size: 0.63rem;
+  color: var(--cinnamon-soft);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  display: block;
+  margin-bottom: 0.4rem;
+}
+
+/* Selector de dificultad (radio buttons visuales) */
+.diff-option {
+  padding: 0.55rem;
+  border-radius: 8px;
+  border: 1.5px solid var(--vanilla-mid);
+  background: var(--bg-subtle);
+  color: var(--cinnamon-mid);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  width: 100%;
+  text-align: center;
+}
+
+.diff-option:hover           { background: var(--vanilla-light); }
+.diff-option.sel-hard        { background: var(--state-error-bg); border-color: var(--state-error); color: #7A2020; }
+.diff-option.sel-medium      { background: var(--state-warn-bg);  border-color: var(--state-warn);  color: #7A5A00; }
+.diff-option.sel-easy        { background: var(--state-ok-bg);    border-color: var(--state-ok);    color: #3A6E3E; }
+
+/* Selector de frecuencia */
+.freq-option {
+  padding: 0.55rem;
+  border-radius: 8px;
+  border: 1.5px solid var(--vanilla-mid);
+  background: var(--bg-subtle);
+  color: var(--cinnamon-mid);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  width: 100%;
+  text-align: center;
+}
+
+.freq-option:hover          { background: var(--vanilla-light); }
+.freq-option.sel-daily      { background: var(--bg-base);        border-color: var(--cinnamon-mid); color: var(--cinnamon-dark); }
+.freq-option.sel-weekly     { background: var(--state-info-bg);  border-color: var(--btn-info);     color: #2A5068; }
+.freq-option.sel-monthly    { background: var(--vanilla-light);  border-color: var(--vanilla-deep); color: var(--cinnamon-dark); }
+
+
+/* ── BADGES ──────────────────────────────────────────────── */
+
+.bdg {
+  font-size: 0.58rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 20px;
+  font-weight: 500;
+  border: 1px solid;
+  font-family: var(--font-mono);
+  white-space: nowrap;
+  display: inline-block;
+}
+
+.bdg-hard    { background: var(--state-error-bg); color: #7A2020; border-color: #D07070; }
+.bdg-medium  { background: var(--state-warn-bg);  color: #7A5A00; border-color: #D4A830; }
+.bdg-easy    { background: var(--state-ok-bg);    color: #3A6E3E; border-color: #8AB88E; }
+.bdg-done    { background: var(--state-ok-bg);    color: #3A6E3E; border-color: #8AB88E; }
+.bdg-tried   { background: var(--state-warn-bg);  color: #7A5A00; border-color: #D4A830; }
+.bdg-overdue { background: var(--state-error-bg); color: #7A2020; border-color: #D07070; }
+.bdg-due     { background: var(--state-warn-bg);  color: #7A5A00; border-color: #D4A830; }
+.bdg-info    { background: var(--state-info-bg);  color: #2A5068; border-color: var(--state-info); }
+.bdg-daily   { background: var(--bg-base);        color: var(--cinnamon-mid); border-color: var(--vanilla-mid); }
+.bdg-weekly  { background: var(--state-info-bg);  color: #2A5068; border-color: var(--btn-info); }
+.bdg-monthly { background: var(--vanilla-light);  color: var(--cinnamon-dark); border-color: var(--vanilla-deep); }
+
+
+/* ── FILTER TABS ─────────────────────────────────────────── */
+
+.filter-tab {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  padding: 0.35rem 0.8rem;
+  border-radius: 20px;
+  border: 1.5px solid var(--vanilla-mid);
+  background: transparent;
+  color: var(--cinnamon-mid);
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.filter-tab:hover {
+  background: var(--vanilla-light);
+  color: var(--cinnamon-dark);
+}
+
+.filter-tab.active {
+  background: var(--cinnamon-dark);
+  color: var(--bg-base);
+  border-color: var(--cinnamon-dark);
+}
+
+
+/* ── STAT STRIP ──────────────────────────────────────────── */
+
+/* Pill de estadística — usada en Home, Habits, Routines, Progress */
+.stat-strip {
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+  border: 1.5px solid;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.stat-strip .stat-num {
+  font-family: var(--font-serif);
+  font-size: 1.4rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.stat-strip .stat-label {
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 0.15rem;
+}
+
+.stat-strip .stat-icon {
+  font-size: 1.2rem;
+}
+
+/* Variantes de color */
+.strip-ok      { background: var(--state-ok-bg);   border-color: #8AB88E; color: #3A6E3E; }
+.strip-warn    { background: var(--state-warn-bg);  border-color: #D4A830; color: #7A5A00; }
+.strip-info    { background: var(--state-info-bg);  border-color: var(--state-info); color: #2A5068; }
+.strip-neutral { background: var(--bg-base);        border-color: var(--vanilla-mid); color: var(--cinnamon-mid); }
+.strip-hard    { background: var(--state-error-bg); border-color: #D07070; color: #7A2020; }
+
+
+/* ── PAN DE MIGA ─────────────────────────────────────────── */
+
+.breadcrumb-dopamine {
+  font-size: 0.72rem;
+  color: var(--cinnamon-soft);
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.breadcrumb-dopamine a {
+  color: var(--cinnamon-mid);
   text-decoration: none;
-  color: hsla(160, 100%, 37%, 1);
-  transition: 0.4s;
-  padding: 3px;
+  transition: color 0.15s;
 }
 
-@media (hover: hover) {
-  a:hover {
-    background-color: hsla(160, 100%, 37%, 0.2);
+.breadcrumb-dopamine a:hover {
+  color: var(--cinnamon-dark);
+  text-decoration: underline;
+}
+
+.breadcrumb-dopamine .separator {
+  color: var(--vanilla-mid);
+}
+
+.breadcrumb-dopamine .current {
+  color: var(--cinnamon-dark);
+  font-weight: 500;
+}
+
+
+/* ── ESTADO VACÍO ────────────────────────────────────────── */
+
+.empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--cinnamon-soft);
+}
+
+.empty-state .empty-icon {
+  font-size: 2.5rem;
+  display: block;
+  margin-bottom: 0.75rem;
+}
+
+.empty-state .empty-title {
+  font-family: var(--font-serif);
+  font-size: 1.1rem;
+  color: var(--cinnamon-mid);
+  margin-bottom: 0.3rem;
+}
+
+.empty-state .empty-sub {
+  font-size: 0.72rem;
+}
+
+
+/* ── LOADING Y ERROR ─────────────────────────────────────── */
+
+.loading-text {
+  text-align: center;
+  color: var(--cinnamon-soft);
+  font-size: 0.8rem;
+  padding: 2rem;
+}
+
+.error-text {
+  color: var(--state-error);
+  background: var(--state-error-bg);
+  border: 1px solid #D07070;
+  border-radius: 8px;
+  padding: 0.6rem 1rem;
+  font-size: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+
+/* ── CHECKBOX CUSTOM ─────────────────────────────────────── */
+
+/* Checkbox circular usado en tareas, hábitos y checklist */
+.dopamine-check {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid var(--vanilla-mid);
+  background: transparent;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-size: 0.65rem;
+}
+
+.dopamine-check:hover {
+  border-color: var(--cinnamon-mid);
+}
+
+.dopamine-check.checked {
+  background: var(--state-ok);
+  border-color: var(--state-ok);
+  color: #fff;
+}
+
+.dopamine-check.tried {
+  background: var(--state-warn-bg);
+  border-color: var(--state-warn);
+  color: #7A5A00;
+}
+
+
+/* ── MODALES (override Bootstrap) ───────────────────────── */
+
+.modal-content {
+  border: none !important;
+  border-radius: 14px !important;
+  overflow: hidden;
+  font-family: var(--font-mono);
+}
+
+.modal-header-dopamine {
+  background: var(--cinnamon-dark);
+  color: var(--bg-base);
+  padding: 1rem 1.3rem;
+  border-bottom: none;
+}
+
+.modal-header-dopamine .modal-title {
+  font-family: var(--font-serif);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.modal-header-dopamine .btn-close {
+  filter: invert(1);
+  opacity: 0.7;
+}
+
+.modal-header-dopamine .btn-close:hover {
+  opacity: 1;
+}
+
+.modal-body-dopamine {
+  padding: 1.3rem;
+}
+
+
+/* ── FOOTER ──────────────────────────────────────────────── */
+
+.app-footer {
+  background: var(--bg-subtle);
+  border-top: 1.5px solid var(--vanilla-mid);
+  padding: 1.5rem 2rem;
+}
+
+.footer-brand {
+  font-family: var(--font-serif);
+  font-size: 0.9rem;
+  color: var(--cinnamon-mid);
+}
+
+.footer-brand em {
+  font-style: italic;
+  font-weight: 300;
+}
+
+.footer-link {
+  color: var(--cinnamon-soft);
+  text-decoration: none;
+  font-size: 0.68rem;
+  transition: color 0.15s;
+}
+
+.footer-link:hover {
+  color: var(--cinnamon-dark);
+}
+
+.footer-copy {
+  font-size: 0.62rem;
+  color: var(--cinnamon-soft);
+  opacity: 0.7;
+}
+
+
+/* ── ANIMACIONES ─────────────────────────────────────────── */
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-@media (min-width: 1024px) {
-  body {
-    display: flex;
-    place-items: center;
+.fade-up              { animation: fadeUp 0.4s ease both; }
+.fade-up.delay-1      { animation-delay: 0.05s; }
+.fade-up.delay-2      { animation-delay: 0.10s; }
+.fade-up.delay-3      { animation-delay: 0.15s; }
+.fade-up.delay-4      { animation-delay: 0.20s; }
+.fade-up.delay-5      { animation-delay: 0.25s; }
+
+
+/* ── RESPONSIVE ──────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  .page-container,
+  .page-container-wide {
+    padding: 1.5rem 1rem 3rem;
   }
 
-  #app {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    padding: 0 2rem;
+  .page-title {
+    font-size: 1.6rem;
+  }
+
+  .fab {
+    bottom: 1.5rem;
+    right: 1.5rem;
   }
 }

@@ -16,7 +16,6 @@ async function register() {
     return
   }
 
-  // nickName no puede tener números
   if (/\d/.test(form.value.nickName)) {
     error.value = 'Nickname cannot contain numbers'
     return
@@ -32,7 +31,7 @@ async function register() {
     return
   }
 
-  const res = await fetch(rutaApi + '?entity=users', {
+  const res  = await fetch(rutaApi + '?entity=users', {
     method:  'POST',
     headers: { 'Content-Type': 'application/json' },
     body:    JSON.stringify({
@@ -43,8 +42,8 @@ async function register() {
   })
   const data = await res.json()
 
-  if (data.status == 'success') {
-    router.push('/login') // redirige al login para que haga sign in
+  if (data.status === 'success') {
+    router.push('/login')
   } else {
     error.value = 'Registration failed. Email may already be in use.'
   }
@@ -52,51 +51,140 @@ async function register() {
 </script>
 
 <template>
-  <div>
-    <h2>Sign Up</h2>
+  <div class="singup-wrapper">
+    <div class="singup-card">
 
-    <p v-if="error">{{ error }}</p>
-
-    <form @submit.prevent="register">
-      <div>
-        <label for="inputNick">Nickname</label>
-        <input
-          id="inputNick"
-          v-model="form.nickName"
-          type="text"
-          placeholder="Your nickname"
-          required
-          aria-required="true"
-        >
+      <!-- LOGO -->
+      <div class="singup-logo">
+        dopamine<em>·app</em>
       </div>
 
-      <div>
-        <label for="inputEmail">Email</label>
-        <input
-          id="inputEmail"
-          v-model="form.email"
-          type="email"
-          placeholder="example@mail.com"
-          required
-          aria-required="true"
-        >
+      <h1 class="singup-title">Sign Up</h1>
+      <p class="singup-sub">Start building better habits 🌱</p>
+
+      <!-- ERROR -->
+      <div v-if="error" class="error-text">
+        {{ error }}
       </div>
 
-      <div>
-        <label for="inputPswd">Password</label>
-        <input
-          id="inputPswd"
-          v-model="form.pswd"
-          type="password"
-          placeholder="Min. 7 characters"
-          required
-          aria-required="true"
+      <!-- FORMULARIO -->
+      <form @submit.prevent="register">
+
+        <div class="mb-3">
+          <label class="form-label-dopamine">Nickname</label>
+          <input
+            v-model="form.nickName"
+            type="text"
+            class="form-control dopamine-input"
+            placeholder="Your nickname"
+            required
+          >
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label-dopamine">Email</label>
+          <input
+            v-model="form.email"
+            type="email"
+            class="form-control dopamine-input"
+            placeholder="example@mail.com"
+            required
+          >
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label-dopamine">Password</label>
+          <input
+            v-model="form.pswd"
+            type="password"
+            class="form-control dopamine-input"
+            placeholder="Min. 7 characters"
+            required
+          >
+        </div>
+
+        <button
+          type="submit"
+          class="btn-dopamine btn-dopamine-primary w-100"
         >
-      </div>
+          Create Account
+        </button>
 
-      <button type="submit">Create Account</button>
-    </form>
+      </form>
 
-    <p>Already have an account? <RouterLink to="/login">Sign In</RouterLink></p>
+      <!-- LINK LOGIN -->
+      <p class="singup-footer-text">
+        Already have an account?
+        <RouterLink to="/login">Sign In</RouterLink>
+      </p>
+
+    </div>
   </div>
 </template>
+
+<style scoped>
+.singup-wrapper {
+  min-height: 100vh;
+  background-color: var(--bg-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+}
+
+.singup-card {
+  background: var(--bg-card);
+  border: 1.5px solid var(--vanilla-mid);
+  border-radius: 16px;
+  padding: 2.5rem 2rem;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 4px 24px rgba(92, 51, 23, 0.10);
+}
+
+.singup-logo {
+  font-family: var(--font-serif);
+  font-size: 1.4rem;
+  color: var(--cinnamon-dark);
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.singup-logo em {
+  font-style: italic;
+  font-weight: 300;
+  color: var(--cinnamon-soft);
+}
+
+.singup-title {
+  font-family: var(--font-serif);
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--cinnamon-dark);
+  margin-bottom: 0.25rem;
+}
+
+.singup-sub {
+  font-size: 0.78rem;
+  color: var(--cinnamon-soft);
+  margin-bottom: 1.5rem;
+}
+
+.singup-footer-text {
+  text-align: center;
+  font-size: 0.72rem;
+  color: var(--cinnamon-soft);
+  margin-top: 1.2rem;
+  margin-bottom: 0;
+}
+
+.singup-footer-text a {
+  color: var(--cinnamon-dark);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.singup-footer-text a:hover {
+  text-decoration: underline;
+}
+</style>
