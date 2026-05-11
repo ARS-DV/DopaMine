@@ -1,99 +1,104 @@
 <script setup>
-//importaciones necesaria para el codigo
+// imports necesarios para Vue, router y API
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'//acceso router del navegador entre vistas
-import { useUserStore } from '@/stores/userStore'  //acceso Store Pinia del usuario logueado
-import { rutaApi } from '@/config.js' //url de la base API
+import { useRouter } from 'vue-router'
+import { useUserStore } from '@/stores/userStore' 
+import { rutaApi } from '@/config.js'
 
-const router    = useRouter()
+const router = useRouter()
 const userStore = useUserStore()
-//variables reactivas para datos del formulario y errores
-const form  = ref({ email: '', pswd: '' })
-const error = ref('')
 
-//funcion del login
-async function login() {
-  error.value = ''
-//controladores de errores
-  if (!form.value.email || !form.value.pswd) {
-    error.value = 'Please fill in all fields'
+// variables reactivas para el login
+const emailInput = ref('')
+const passwordInput = ref('')
+const errorMessage = ref('')
+
+//funcion principal
+function loginUser() {
+  errorMessage.value = ''
+
+  //validaciones
+  if (emailInput.value == '' || passwordInput.value == '') {
+    errorMessage.value = 'Please fill in all fields'
+    return
+  }
+  if (emailInput.value.includes('@') === false) {
+    errorMessage.value = 'Enter a valid email address'
     return
   }
 
-  if (!form.value.email.includes('@')) {
-    error.value = 'Enter a valid email address'
-    return
+  //variable para guardar los datos a pasar al backend
+  let loginData = {
+    email: emailInput.value,
+    pswd: passwordInput.value
   }
 
-  const res  = await fetch(rutaApi + '?entity=users&login', {
-    method:  'POST',
+  //peticion fetch a la API con POST
+  fetch(rutaApi + '?entity=users&login', {
+    method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body:    JSON.stringify({ email: form.value.email, pswd: form.value.pswd })
+    body: JSON.stringify(loginData)
   })
-  const data = await res.json()
-
-  if (data.status === 'success') {
-    userStore.login(data.user)
-    router.push('/')
-  } else {
-    error.value = 'Wrong email or password'
-  }
+  .then(response => response.json())
+  .then(data => {
+    if (data.status == 'success') {
+      userStore.login(data.user)
+      router.push('/')
+    } else {
+      errorMessage.value = 'Wrong email or password'
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error)
+    errorMessage.value = 'Connection error'
+  })
 }
 </script>
 
 <template>
-  <div class="login-wrapper">
-    <div class="login-card">
+  <div>
+    <div>
 
-      <!-- LOGO -->
-      <div class="login-logo">
-        dopamine<em>·app</em>
+      <h1>Sign In</h1>
+      <p>Welcome back</p>
+
+      <div v-if="errorMessage">
+        <b style="color: red;">{{ errorMessage }}</b>
       </div>
 
-      <h1 class="login-title">Sign In</h1>
-      <p class="login-sub">Welcome back </p>
+      <form @submit.prevent="loginUser">
 
-      <!-- ERROR -->
-      <div v-if="error" class="error-text">
-        {{ error }}
-      </div>
-
-      <!-- FORMULARIO -->
-      <form @submit.prevent="login">
-
-        <div class="mb-3">
-          <label class="form-label-dopamine">Email</label>
+        <div>
+          <label>Email</label><br>
           <input
-            v-model="form.email"
+            v-model="emailInput"
             type="email"
-            class="form-control dopamine-input"
             placeholder="example@mail.com"
-            required
           >
         </div>
 
-        <div class="mb-4">
-          <label class="form-label-dopamine">Password</label>
+        <br>
+
+        <div>
+          <label>Password</label><br>
           <input
-            v-model="form.pswd"
+            v-model="passwordInput"
             type="password"
-            class="form-control dopamine-input"
             placeholder="••••••••"
-            required
           >
         </div>
 
-        <button
-          type="submit"
-          class="btn-dopamine btn-dopamine-primary w-100"
-        >
+        <br>
+
+        <button type="submit">
           Sign In
         </button>
 
       </form>
 
-      <!-- LINK REGISTRO -->
-      <p class="login-footer-text">
+      <br>
+
+      <p>
         Don't have an account?
         <RouterLink to="/singup">Sign Up</RouterLink>
       </p>
@@ -101,70 +106,3 @@ async function login() {
     </div>
   </div>
 </template>
-
-<style scoped>
-.login-wrapper {
-  min-height: 100vh;
-  background-color: var(--bg-subtle);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem 1rem;
-}
-
-.login-card {
-  background: var(--bg-card);
-  border: 1.5px solid var(--vanilla-mid);
-  border-radius: 16px;
-  padding: 2.5rem 2rem;
-  width: 100%;
-  max-width: 420px;
-  box-shadow: 0 4px 24px rgba(92, 51, 23, 0.10);
-}
-
-.login-logo {
-  font-family: var(--font-serif);
-  font-size: 1.4rem;
-  color: var(--cinnamon-dark);
-  text-align: center;
-  margin-bottom: 1.5rem;
-}
-
-.login-logo em {
-  font-style: italic;
-  font-weight: 300;
-  color: var(--cinnamon-soft);
-}
-
-.login-title {
-  font-family: var(--font-serif);
-  font-size: 1.6rem;
-  font-weight: 700;
-  color: var(--cinnamon-dark);
-  margin-bottom: 0.25rem;
-}
-
-.login-sub {
-  font-size: 0.78rem;
-  color: var(--cinnamon-soft);
-  margin-bottom: 1.5rem;
-}
-
-.login-footer-text {
-  text-align: center;
-  font-size: 0.72rem;
-  color: var(--cinnamon-soft);
-  margin-top: 1.2rem;
-  margin-bottom: 0;
-}
-
-.login-footer-text a {
-  color: var(--cinnamon-dark);
-  font-weight: 500;
-  text-decoration: none;
-}
-
-.login-footer-text a:hover {
-  text-decoration: underline;
-}
-</style>

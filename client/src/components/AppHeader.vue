@@ -21,18 +21,18 @@ function closeDropdown() {
   <header class="app-header">
     <div class="header-inner">
 
-      <!-- LOGO -->
+      <!-- logo -->
       <RouterLink to="/" class="header-logo">
-        dopamine<em>·app</em>
+        DopaMine
       </RouterLink>
 
-      <!-- SIN SESIÓN -->
+      <!-- sin login -->
       <nav v-if="!userStore.isLogged()" class="header-nav">
         <RouterLink to="/login"  class="btn-dopamine btn-dopamine-ghost">Sign In</RouterLink>
         <RouterLink to="/singup" class="btn-dopamine btn-dopamine-primary">Sign Up</RouterLink>
       </nav>
 
-      <!-- CON SESIÓN -->
+      <!-- con login -->
       <nav v-else class="header-nav">
 
         <!-- DROPDOWN VISTAS -->
@@ -84,12 +84,12 @@ function closeDropdown() {
           </ul>
         </div>
 
-        <!-- NOMBRE USUARIO -->
+        <!-- nombre usuario -->
         <span class="header-username">
           {{ userStore.user.nickName }}
         </span>
 
-        <!-- LOGOUT -->
+        <!-- logout -->
         <button class="btn-dopamine btn-dopamine-ghost" @click="logout">
           <i class="bi bi-box-arrow-right"></i> Sign Out
         </button>
@@ -120,7 +120,7 @@ function closeDropdown() {
   gap: 1rem;
 }
 
-/* LOGO */
+
 .header-logo {
   font-family: var(--font-serif);
   font-size: 1.2rem;
@@ -139,14 +139,14 @@ function closeDropdown() {
   color: var(--vanilla-light);
 }
 
-/* NAV */
+
 .header-nav {
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
-/* Override botones en header oscuro */
+
 .app-header .btn-dopamine-ghost {
   color: var(--bg-base);
   border-color: var(--vanilla-mid);
@@ -170,18 +170,18 @@ function closeDropdown() {
   transform: none;
 }
 
-/* RouterLink como botón en el header */
+
 .app-header a.btn-dopamine-ghost {
   color: var(--bg-base);
 }
 
-/* NOMBRE USUARIO */
+
 .header-username {
   font-size: 0.75rem;
   color: var(--vanilla-light);
 }
 
-/* DROPDOWN */
+
 .header-dropdown-wrap {
   position: relative;
 }

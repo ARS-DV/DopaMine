@@ -1,7 +1,7 @@
 <?php
 include 'db.php';
 
-// GET — obtener checklist de una tarea
+// GET para obtener checklist de una tarea
 if ($method === 'GET') {
     if (!isset($_GET['task_id'])) {
         echo json_encode(['status' => 'error', 'message' => 'task_id is required']);
@@ -21,13 +21,13 @@ if ($method === 'GET') {
 }
 
 
-// POST — añadir item al checklist de una tarea
+// POST para añadir item al checklist de una tarea
 if ($method === 'POST') {
     $data    = json_decode(file_get_contents('php://input'), true);
     $task_id = intval($data['task_id']);
     $title   = $data['title'];
 
-    // Calcular el siguiente sort_order
+    // se calcula el siguiente sort
     $stmt = $conn->prepare(
         "SELECT COALESCE(MAX(sort_order), 0) + 1 AS next_order
          FROM task_checklist WHERE task_id = ?"
@@ -53,7 +53,7 @@ if ($method === 'POST') {
 }
 
 
-// PATCH — marcar item como hecho o no hecho
+// PATCH para marcar el item como hecho o no hecho
 if ($method === 'PATCH') {
     $id   = intval($_GET['id']);
     $data = json_decode(file_get_contents('php://input'), true);
@@ -68,12 +68,12 @@ if ($method === 'PATCH') {
 }
 
 
-// PUT — editar título de un item o reordenar
+// PUT para editar titulo de un item o reordenar
 if ($method === 'PUT') {
     $id   = intval($_GET['id']);
     $data = json_decode(file_get_contents('php://input'), true);
 
-    // Reordenar (recibe array de ids en el nuevo orden)
+    // aqui se reordena
     if (isset($data['order']) && is_array($data['order'])) {
         $conn->begin_transaction();
         try {
@@ -92,7 +92,7 @@ if ($method === 'PUT') {
             echo json_encode(['status' => 'error', 'message' => 'Error updating order']);
         }
 
-    // Editar título
+    // edicion del título
     } elseif (isset($data['title'])) {
         $title = $data['title'];
         $stmt  = $conn->prepare("UPDATE task_checklist SET title = ? WHERE id = ?");
@@ -105,7 +105,7 @@ if ($method === 'PUT') {
 }
 
 
-// DELETE — eliminar item del checklist
+// DELETE para eliminar item del checklist
 if ($method === 'DELETE') {
     $id   = intval($_GET['id']);
     $stmt = $conn->prepare("DELETE FROM task_checklist WHERE id = ?");

@@ -1,8 +1,4 @@
-/* ============================================================
-   DOPAMINE APP — main.css
-   CSS global: variables, base, componentes compartidos
-   Importar DESPUÉS de Bootstrap en main.js
-   ============================================================ */
+
 
 
 /* ── VARIABLES DE PALETA ──────────────────────────────────── */
@@ -47,7 +43,7 @@
 }
 
 
-/* ── BASE ────────────────────────────────────────────────── */
+/* BASE ────────────────────────────────────────────────── */
 
 body {
   background-color: var(--bg-subtle);

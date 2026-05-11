@@ -1,10 +1,10 @@
 <?php
 include 'db.php';
 
-// GET — obtener tareas del usuario
+// GET para obtener user
 if ($method === 'GET') {
 
-    // Detalle de una tarea con su checklist
+    // detalle de las tareas checklist
     if (isset($_GET['id'])) {
         $id = intval($_GET['id']);
 
@@ -18,7 +18,7 @@ if ($method === 'GET') {
             exit;
         }
 
-        // Checklist de esa tarea
+        //checklist de esa tarea
         $stmt2 = $conn->prepare(
             "SELECT * FROM task_checklist WHERE task_id = ? ORDER BY sort_order ASC"
         );
@@ -31,7 +31,7 @@ if ($method === 'GET') {
         $task['checklist'] = $checklist;
         echo json_encode($task, JSON_UNESCAPED_UNICODE);
 
-    // Tareas de hoy de un usuario
+    //tareas de hoy de un usuario
     } elseif (isset($_GET['user_id']) && isset($_GET['today'])) {
         $user_id = intval($_GET['user_id']);
         $today   = date('Y-m-d');
@@ -48,7 +48,7 @@ if ($method === 'GET') {
         while ($row = $stmt->get_result()->fetch_assoc()) $tasks[] = $row;
         echo json_encode($tasks, JSON_UNESCAPED_UNICODE);
 
-    // Todas las tareas de un usuario con filtro opcional de dificultad
+    //todas las tareas de un usuario con filtro opcional de dificultad
     } elseif (isset($_GET['user_id'])) {
         $user_id = intval($_GET['user_id']);
         $query   = "SELECT * FROM task WHERE user_id = ?";
@@ -82,7 +82,7 @@ if ($method === 'GET') {
 }
 
 
-// POST — crear tarea
+// POST,crear tarea
 if ($method === 'POST') {
     $data       = json_decode(file_get_contents('php://input'), true);
     $user_id    = intval($data['user_id']);
@@ -110,7 +110,7 @@ if ($method === 'POST') {
 }
 
 
-// PUT — editar tarea completa
+// PUT para editar tarea completa
 if ($method === 'PUT') {
     $id         = intval($_GET['id']);
     $data       = json_decode(file_get_contents('php://input'), true);
@@ -135,27 +135,27 @@ if ($method === 'PUT') {
 }
 
 
-// PATCH — marcar tarea como completada (crea task_record)
+// PATCH para marcar tarea como completada 
 if ($method === 'PATCH') {
     $id   = intval($_GET['id']);
     $data = json_decode(file_get_contents('php://input'), true);
     $done = intval($data['done']); // 1 o 0
 
-    // Actualizar campo done en task
+    // actualizar el campo
     $stmt = $conn->prepare("UPDATE task SET done = ? WHERE id = ?");
     $stmt->bind_param("ii", $done, $id);
     $stmt->execute();
 
-    // Si se marca como completada, insertar en task_record
+    //si se completo se marca como done
     if ($done === 1) {
-        // Comprobar si se completó antes de la fecha límite
+        // comprobar fecha limite
         $stmt2 = $conn->prepare("SELECT expDate FROM task WHERE id = ?");
         $stmt2->bind_param("i", $id);
         $stmt2->execute();
         $task    = $stmt2->get_result()->fetch_assoc();
         $onTime  = (new DateTime()) <= (new DateTime($task['expDate'])) ? 1 : 0;
 
-        // Evitar duplicados en task_record
+        //evitar duplicados
         $stmt3 = $conn->prepare("SELECT id FROM task_record WHERE task_id = ?");
         $stmt3->bind_param("i", $id);
         $stmt3->execute();
@@ -174,7 +174,7 @@ if ($method === 'PATCH') {
 }
 
 
-// DELETE — eliminar tarea
+// DELETE para eliminar tarea
 if ($method === 'DELETE') {
     $id   = intval($_GET['id']);
     $stmt = $conn->prepare("DELETE FROM task WHERE id = ?");

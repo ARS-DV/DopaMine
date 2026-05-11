@@ -1,52 +1,78 @@
 <script setup>
+// imports necesarios de Vue y el router
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { rutaApi } from '@/config.js'
 
 const router = useRouter()
 
-const form  = ref({ nickName: '', email: '', pswd: '' })
-const error = ref('')
+// variables reactivas del formulario
+const nickNameInput = ref('')
+const emailInput = ref('')
+const passwordInput = ref('')
+const errorMessage = ref('')
 
-async function register() {
-  error.value = ''
+//funcion principal
+async function registerUser() {
+  errorMessage.value = ''
 
-  if (!form.value.nickName || !form.value.email || !form.value.pswd) {
-    error.value = 'Please fill in all fields'
+  //validaciones
+  if (nickNameInput.value == '' || emailInput.value == '' || passwordInput.value == '') {
+    errorMessage.value = 'Please fill in all fields'
+    return
+  }
+  let hasNumber = false;
+  let numbers = "0123456789";
+  for (let i = 0; i < nickNameInput.value.length; i++) {
+    if (numbers.includes(nickNameInput.value[i])) {
+      hasNumber = true;
+    }
+  }
+  
+  if (hasNumber == true) {
+    errorMessage.value = 'Nickname cannot contain numbers'
     return
   }
 
-  if (/\d/.test(form.value.nickName)) {
-    error.value = 'Nickname cannot contain numbers'
+  //validacion email
+  if (emailInput.value.includes('@') == false) {
+    errorMessage.value = "Enter a valid email address"
     return
   }
 
-  if (!form.value.email.includes('@')) {
-    error.value = 'Enter a valid email address'
+  //validacion contraseña
+  //TODO: requerir una contraseña más compleja
+  if (passwordInput.value.length < 7) {
+    errorMessage.value = 'Password must be at least 7 characters'
     return
   }
 
-  if (form.value.pswd.length < 7) {
-    error.value = 'Password must be at least 7 characters'
-    return
+  //variable objeto para el backend
+  let userData = {
+    nickName: nickNameInput.value,
+    email: emailInput.value,
+    pswd: passwordInput.value
   }
 
-  const res  = await fetch(rutaApi + '?entity=users', {
-    method:  'POST',
+  // peticion fetch a la API con Post
+  fetch(rutaApi + '?entity=users', {
+    method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body:    JSON.stringify({
-      nickName: form.value.nickName,
-      email:    form.value.email,
-      pswd:     form.value.pswd
-    })
+    body: JSON.stringify(userData)
   })
-  const data = await res.json()
-
-  if (data.status === 'success') {
-    router.push('/login')
-  } else {
-    error.value = 'Registration failed. Email may already be in use.'
-  }
+  .then(response => response.json())
+  .then(data => {
+    //si todo correcto, nos devuelve al login
+    if (data.status === 'success') {
+      router.push('/login')
+    } else {
+      errorMessage.value = 'Registration failed. Email may already be in use.'
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error)
+    errorMessage.value = 'Connection error'
+  })
 }
 </script>
 
@@ -54,7 +80,6 @@ async function register() {
   <div class="singup-wrapper">
     <div class="singup-card">
 
-      <!-- LOGO -->
       <div class="singup-logo">
         dopamine<em>·app</em>
       </div>
@@ -62,44 +87,39 @@ async function register() {
       <h1 class="singup-title">Sign Up</h1>
       <p class="singup-sub">Start building better habits 🌱</p>
 
-      <!-- ERROR -->
-      <div v-if="error" class="error-text">
-        {{ error }}
+      <div v-if="errorMessage" class="error-text">
+        {{ errorMessage }}
       </div>
 
-      <!-- FORMULARIO -->
-      <form @submit.prevent="register">
+      <form @submit.prevent="registerUser">
 
         <div class="mb-3">
           <label class="form-label-dopamine">Nickname</label>
           <input
-            v-model="form.nickName"
+            v-model="nickNameInput"
             type="text"
             class="form-control dopamine-input"
             placeholder="Your nickname"
-            required
           >
         </div>
 
         <div class="mb-3">
           <label class="form-label-dopamine">Email</label>
           <input
-            v-model="form.email"
+            v-model="emailInput"
             type="email"
             class="form-control dopamine-input"
             placeholder="example@mail.com"
-            required
           >
         </div>
 
         <div class="mb-4">
           <label class="form-label-dopamine">Password</label>
           <input
-            v-model="form.pswd"
+            v-model="passwordInput"
             type="password"
             class="form-control dopamine-input"
             placeholder="Min. 7 characters"
-            required
           >
         </div>
 
@@ -112,7 +132,6 @@ async function register() {
 
       </form>
 
-      <!-- LINK LOGIN -->
       <p class="singup-footer-text">
         Already have an account?
         <RouterLink to="/login">Sign In</RouterLink>

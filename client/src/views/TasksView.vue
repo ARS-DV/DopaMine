@@ -1,84 +1,139 @@
 <script setup>
+// imports para Vue, router y API
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/userStore'
 import { rutaApi } from '@/config.js'
 
 const userStore = useUserStore()
-const router    = useRouter()
+const router = useRouter()
 
-const tasks   = ref([])
+// variables reactivas
+const tasks = ref([])
 const loading = ref(true)
-const error   = ref('')
-const filter  = ref('all')
+const error = ref('')
+const filter = ref('all')
 
+//funcion principal
 async function fetchTasks() {
   loading.value = true
-  error.value   = ''
-  try {
-    const res  = await fetch(`${rutaApi}?entity=tasks&user_id=${userStore.user.id}`)
-    const data = await res.json()
-    tasks.value = data
-  } catch (e) {
-    error.value = 'Error loading tasks'
-  } finally {
-    loading.value = false
-  }
+  error.value = ''
+  
+  let url = rutaApi + "?entity=tasks&user_id=" + userStore.user.id
+  
+  fetch(url)
+    .then(res => res.json())
+    .then(data => {
+      tasks.value = data
+      loading.value = false
+    })
+    .catch(err => {
+      error.value = 'Error loading tasks'
+      loading.value = false
+    })
 }
 
+//para marcar o desmarcar la tarea
 async function toggleDone(task) {
-  const newDone = task.done ? 0 : 1
-  const res  = await fetch(`${rutaApi}?entity=tasks&id=${task.id}`, {
-    method:  'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body:    JSON.stringify({ done: newDone })
-  })
-  const data = await res.json()
-  if (data.status === 'success') task.done = !!newDone
-}
-
-async function deleteTask(id) {
-  if (!confirm('Delete this task?')) return
-  const res  = await fetch(`${rutaApi}?entity=tasks&id=${id}`, { method: 'DELETE' })
-  const data = await res.json()
-  if (data.status === 'success') {
-    tasks.value = tasks.value.filter(t => t.id !== id)
-  } else {
-    error.value = 'Error deleting task'
+  // asignacion numerica para saber si esta hecha o no
+  let newStatus = 0
+  if (task.done == false || task.done == 0) {
+    newStatus = 1
   }
+
+  fetch(rutaApi + "?entity=tasks&id=" + task.id, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ done: newStatus })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.status === 'success') {
+      //actualizacion automatica ante tarea hecha
+      if (newStatus == 1) {
+        task.done = true
+      } else {
+        task.done = false
+      }
+    }
+  })
 }
 
-function isOverdue(task) {
-  return !task.done && new Date(task.expDate) < new Date()
+// Borrar una tarea
+async function deleteTask(id) {
+  let check = confirm('Delete this task?')
+  if (check === false) {
+    return
+  }
+
+  fetch(rutaApi + "?entity=tasks&id=" + id, { method: 'DELETE' })
+    .then(res => res.json())
+    .then(data => {
+      if (data.status === 'success') {
+        tasks.value = tasks.value.filter(t => t.id !== id)
+      } else {
+        error.value = 'Error deleting task'
+      }
+    })
 }
 
-function isDueToday(task) {
-  if (task.done) return false
-  const today   = new Date().toISOString().split('T')[0]
-  const expDate = task.expDate?.split('T')[0] ?? task.expDate?.split(' ')[0]
-  return expDate === today
+//funciones para comprobar fechas
+async function isOverdue(task) {
+  let today = new Date()
+  let taskDate = new Date(task.expDate)
+  return task.done == false && taskDate < today
 }
 
+async function isDueToday(task) {
+  if (task.done === true) return false
+  
+  let today = new Date().toISOString().split('T')[0]
+  let expDate = ""
+  
+  if (task.expDate) {
+    expDate = task.expDate.split(' ')[0]
+  }
+  
+  return expDate == today
+}
+
+// Formatear la fecha para que se vea bien
 function formatDate(dateStr) {
-  if (!dateStr) return 'No deadline'
-  return new Date(dateStr).toLocaleDateString('en-GB')
+  if (!dateStr) {
+    return 'No deadline'
+  }
+  let date = new Date(dateStr)
+  return date.toLocaleDateString('en-GB')
 }
 
+//filtros
 const filteredTasks = computed(() => {
-  switch (filter.value) {
-    case 'pending': return tasks.value.filter(t => !t.done)
-    case 'done':    return tasks.value.filter(t => t.done)
-    case 'easy':    return tasks.value.filter(t => t.difficulty === 'easy')
-    case 'medium':  return tasks.value.filter(t => t.difficulty === 'medium')
-    case 'hard':    return tasks.value.filter(t => t.difficulty === 'hard')
-    case 'overdue': return tasks.value.filter(t => isOverdue(t))
-    default:        return tasks.value
+  if (filter.value === 'pending') {
+    return tasks.value.filter(t => t.done == false)
+  } else if (filter.value === 'done') {
+    return tasks.value.filter(t => t.done == true)
+  } else if (filter.value === 'hard') {
+    return tasks.value.filter(t => t.difficulty == 'hard')
+  } else if (filter.value === 'medium') {
+    return tasks.value.filter(t => t.difficulty == 'medium')
+  } else if (filter.value === 'easy') {
+    return tasks.value.filter(t => t.difficulty == 'easy')
+  } else if (filter.value === 'overdue') {
+    return tasks.value.filter(t => isOverdue(t))
+  } else {
+    return tasks.value
   }
 })
 
-const countByDiff = (diff) => tasks.value.filter(t => t.difficulty === diff && !t.done).length
+//contador de tareas por dificultad
+function countByDiff(diff) {
+  let lista = tasks.value.filter(t => t.difficulty === diff && t.done == false)
+  return lista.length
+}
 
-onMounted(() => fetchTasks())
+onMounted(() => {
+  fetchTasks()
+})
 </script>
 
 <template>
@@ -92,14 +147,12 @@ onMounted(() => fetchTasks())
 
       <button @click="router.push('/tasks/new')">+ New Task</button>
 
-      <!-- STRIP DIFICULTAD -->
       <div>
         <span>Hard: {{ countByDiff('hard') }}</span>
         <span>Medium: {{ countByDiff('medium') }}</span>
         <span>Easy: {{ countByDiff('easy') }}</span>
       </div>
 
-      <!-- FILTROS -->
       <div>
         <button @click="filter = 'all'">All ({{ tasks.length }})</button>
         <button @click="filter = 'pending'">Pending</button>

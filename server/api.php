@@ -11,7 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
     exit;
 }
 
-// ✅ Usamos GET en vez de PATH_INFO
+
 if (!isset($_GET['entity'])) {
     echo json_encode(['status' => 'error', 'message' => 'No entity specified']);
     exit;

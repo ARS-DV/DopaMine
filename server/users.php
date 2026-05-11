@@ -1,10 +1,10 @@
 <?php
 include 'db.php';
 
-// GET — admin: todos los usuarios | normal: perfil propio
+// get para el admin o usuarios
 if ($method == 'GET') {
     if (isset($_GET['admin'])) {
-        // Solo admin puede ver todos
+        // admin
         $result = $conn->query("SELECT id, nickName, email, energy FROM user");
         $users = [];
         while ($row = $result->fetch_assoc()) $users[] = $row;
@@ -19,7 +19,7 @@ if ($method == 'GET') {
     }
 }
 
-// POST LOGIN
+// post del login
 if ($method == 'POST' && isset($_GET['login'])) {
     $data  = json_decode(file_get_contents('php://input'), true);
     $email = trim($data['email']);
@@ -43,7 +43,7 @@ if ($method == 'POST' && isset($_GET['login'])) {
     }
 }
 
-// POST REGISTER
+// post register
 if ($method == 'POST' && !isset($_GET['login'])) {
     $data     = json_decode(file_get_contents('php://input'), true);
     $nickName = $data['nickName'];
@@ -63,24 +63,24 @@ if ($method == 'POST' && !isset($_GET['login'])) {
     }
 }
 
-// PUT — admin cambia nickName o contraseña de cualquier usuario
+// put del user
 if ($method == 'PUT') {
     $id   = intval($_GET['id']);
     $data = json_decode(file_get_contents('php://input'), true);
 
-    // Cambiar contraseña (admin)
+    // cambiar contraseña
     if (isset($data['pswd'])) {
         $hashed = password_hash($data['pswd'], PASSWORD_BCRYPT);
         $stmt   = $conn->prepare("UPDATE user SET pswd = ? WHERE id = ?");
         $stmt->bind_param("si", $hashed, $id);
 
-    // Cambiar nickName (admin o el propio usuario)
+    // cambiar nickname
     } elseif (isset($data['nickName'])) {
         $nick = $data['nickName'];
         $stmt = $conn->prepare("UPDATE user SET nickName = ? WHERE id = ?");
         $stmt->bind_param("si", $nick, $id);
 
-    // Cambiar energy (el propio usuario)
+    // cambiar energy
     } elseif (isset($data['energy'])) {
         $energy = $data['energy'];
         $stmt   = $conn->prepare("UPDATE user SET energy = ? WHERE id = ?");
@@ -94,7 +94,7 @@ if ($method == 'PUT') {
     }
 }
 
-// DELETE — admin elimina usuario
+// delete
 if ($method == 'DELETE') {
     $id   = intval($_GET['id']);
     $stmt = $conn->prepare("DELETE FROM user WHERE id = ?");

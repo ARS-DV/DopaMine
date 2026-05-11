@@ -1,17 +1,16 @@
 <script setup>
-// El footer no necesita lógica
 </script>
 
 <template>
   <footer class="app-footer">
     <div class="footer-inner">
 
-      <!-- MARCA -->
+      <!-- marca -->
       <div class="footer-brand">
-        dopamine<em>·app</em>
+        dopamine
       </div>
 
-      <!-- LINKS -->
+      <!-- links -->
       <div class="footer-links">
         <a href="#" class="footer-link">Privacy</a>
         <a href="#" class="footer-link">Terms</a>
@@ -20,7 +19,7 @@
 
       <!-- COPYRIGHT -->
       <div class="footer-copy">
-        © 2026 Dopamine. All rights reserved.
+        &copy; 2026 Dopamine. All rights reserved.
       </div>
 
     </div>
@@ -28,9 +27,6 @@
 </template>
 
 <style scoped>
-/* app-footer, footer-brand, footer-link y footer-copy
-   ya están definidos en main.css.
-   Aquí solo añadimos el layout del footer */
 
 .footer-inner {
   max-width: 1100px;

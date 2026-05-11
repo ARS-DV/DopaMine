@@ -1,121 +1,131 @@
 <script setup>
-//importaciones necesaria para el codigo
+// imports para Vue, router y API
 import { ref, computed, onMounted } from "vue";
-import { useRouter } from "vue-router";  //acceso router del navegador entre vistas
-import { useUserStore } from "@/stores/userStore"; //acceso Store Pinia del usuario logueado
-import { rutaApi } from "@/config.js"; //url de la base API
+import { useRouter } from "vue-router";
+import { useUserStore } from "@/stores/userStore";
+import { rutaApi } from "@/config.js";
 
 const userStore = useUserStore();
 const router = useRouter();
 
-//variables reactivas para estados, guardar habitos y filtro
+//variables reactivas
 const habits = ref([]);
 const loading = ref(true);
 const error = ref("");
 const filter = ref("all");
 
-
-
+//funcion principal
 async function fetchHabits() {
   loading.value = true;
   error.value = "";
-  let usuario = userStore.user.id;
-  try {
-    const res = await fetch(
-      rutaApi+'?entity=habits&user_id='+usuario,
-    );
-    const data = await res.json();
-    habits.value = data;
-  } catch (e) {
-    error.value = "Error loading habits";
-  } finally {
-    loading.value = false;
+  let userId = userStore.user.id;
+
+  fetch(rutaApi + "?entity=habits&user_id=" + userId)
+    .then((response) => response.json())
+    .then((data) => {
+      habits.value = data;
+      loading.value = false;
+    })
+    .catch((err) => {
+      console.error(err);
+      error.value = "Error loading habits";
+      loading.value = false;
+    });
+}
+
+// para cambiar el valor del estado del habito
+ function doneLabel(val) {
+  if (val == 2) {
+    return "Done";
+  } else if (val == 1) {
+    return "Tried";
+  } else {
+    return "Pending";
   }
 }
-//fucion para procesar el valor de realizacion de l atarea
-function doneLabel(val) {
-  if (val == 2){
-      return "Done";
-  }else if (val == 1){
-    return "Tried";
-  }else{
-    return "Pending";
-  } 
-}
 
-//funcion principal
+//funcion para cambiar el estado del habito
 async function cycleState(habit) {
-  //
-  const next = (parseInt(habit.done_today ?? 0) + 1) % 3;
+  //calculo del numero
+  let currentState = habit.done_today;
+  if (currentState == null || currentState == undefined) {
+    currentState = 0;
+  }
+  
+  let nextState = (parseInt(currentState) + 1) % 3;
 
-  const res = await fetch(`${rutaApi}?entity=habits&id=${habit.id}`, {
+  let updateData = { done: nextState };
+
+  fetch(rutaApi + "?entity=habits&id=" + habit.id, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ done: next }),
-  });
-  const data = await res.json();
-
-  if (data.status === "success") {
-    habit.done_today = next;
-    habit.streak = data.current_streak;
-  }
+    body: JSON.stringify(updateData),
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.status === "success") {
+        habit.done_today = nextState;
+        habit.streak = data.current_streak;
+      }
+    });
 }
+
 //funcion para borrar el habito
 async function deleteHabit(id) {
-  if (!confirm("Delete this habit?")) return;
-
-  const res = await fetch(`${rutaApi}?entity=habits&id=${id}`, {
-    method: "DELETE",
-  });
-  const data = await res.json();
-
-  if (data.status === "success") {
-    habits.value = habits.value.filter((h) => h.id !== id);
-  } else {
-    error.value = "Error deleting habit";
+  let confirmation = confirm("Delete this habit?");
+  if (confirmation === false) {
+    return;
   }
+
+  fetch(rutaApi + "?entity=habits&id=" + id, {
+    method: "DELETE",
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.status === "success") {
+        // se borra el estado 
+        habits.value = habits.value.filter((h) => h.id !== id);
+      } else {
+        error.value = "Error deleting habit";
+      }
+    });
 }
 
-
-//funcion para filtrar los habitos
+//filtro 
 const filteredHabits = computed(() => {
-  switch (filter.value) {
-    case "daily":
-      return habits.value.filter((h) => h.frecuency === "daily");
-    case "weekly":
-      return habits.value.filter((h) => h.frecuency === "weekly");
-    case "monthly":
-      return habits.value.filter((h) => h.frecuency === "monthly");
-    case "done":
-      return habits.value.filter((h) => h.done_today);
-    default:
-      return habits.value;
+  if (filter.value == "daily") {
+    return habits.value.filter((h) => h.frecuency == "daily");
+  } else if (filter.value == "weekly") {
+    return habits.value.filter((h) => h.frecuency == "weekly");
+  } else if (filter.value == "monthly") {
+    return habits.value.filter((h) => h.frecuency == "monthly");
+  } else if (filter.value == "done") {
+    return habits.value.filter((h) => h.done_today == 2);
+  } else {
+    return habits.value;
   }
 });
 
-//funcion para comprobar si hoy toca hacer el habito
+//funcion para comprobar si el habito toca hoy
 function isTodayScheduled(habit) {
-  const today = new Date();
-  const dayName = today
-    .toLocaleString("en-US", { weekday: "long" })
-    .toLowerCase();
-  const dayOfMonth = today.getDate();
+  let today = new Date();
+  //se saca el dia de hoy en ingles
+  let dayName = today.toLocaleString("en-US", { weekday: "long" }).toLowerCase();
+  let dayOfMonth = today.getDate();
 
-  if (habit.frecuency == "daily") return true;
-
+  if (habit.frecuency == "daily") {
+    return true;
+  }
   if (habit.frecuency == "weekly") {
     return habit.days && habit.days.includes(dayName);
   }
-
   if (habit.frecuency == "monthly") {
     return parseInt(habit.dayOfMonth) === dayOfMonth;
   }
-
   return false;
 }
 
-// ── LIFECYCLE ─────────────────────────────────────────────────
-
+//al cargar la pagina automaticamente llamamos a la funcion de habito
 onMounted(() => {
   fetchHabits();
 });
@@ -125,17 +135,12 @@ onMounted(() => {
   <div>
     <h1>Habits</h1>
 
-    <!-- template si hay algun error -->
     <p v-if="error">{{ error }}</p>
-
-    <!-- template para indicar que esta cargando ls datos -->
     <p v-if="loading">Loading...</p>
 
     <template v-else>
-      <!-- boton para ir a la pantalla de crear un nuevo habito -->
       <button @click="router.push('/habits/new')">+ New Habit</button>
 
-      <!-- botones para filtrar los habitos -->
       <div>
         <button @click="filter = 'all'">All ({{ habits.length }})</button>
         <button @click="filter = 'daily'">Daily</button>
@@ -144,16 +149,15 @@ onMounted(() => {
         <button @click="filter = 'done'">Done today</button>
       </div>
 
-      <!-- si no hay habitos, sale habitos no encontrados -->
-      <p v-if="filteredHabits.length === 0">No habits found</p>
+      <p v-if="filteredHabits.length == 0">No habits found</p>
 
-      <!-- lista de habitos -->
       <ul v-else>
         <li v-for="habit in filteredHabits" :key="habit.id">
           <button @click="cycleState(habit)">
             {{ doneLabel(habit.done_today) }}
           </button>
-          <span v-if="!isTodayScheduled(habit)">(not today)</span>
+          
+          <span v-if="isTodayScheduled(habit) == false">(not today)</span>
 
           <span>{{ habit.icon }} {{ habit.title }}</span>
           <span>{{ habit.frecuency }}</span>
@@ -168,7 +172,8 @@ onMounted(() => {
 
           <span> {{ habit.streak }} streak</span>
           <span>Total: {{ habit.total_done }}</span>
-          <span v-if="habit.done_today">✓ Done today</span>
+          
+          <span v-if="habit.done_today == 2">✓ Done today</span>
 
           <button @click="deleteHabit(habit.id)">Delete</button>
         </li>

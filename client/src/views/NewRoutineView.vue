@@ -1,258 +1,215 @@
 <script setup>
+// imports para Vue, router y API
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/userStore'
 import { rutaApi } from '@/config.js'
 
-const userStore  = useUserStore()
-const router     = useRouter()
+const userStore = useUserStore()
+const router    = useRouter()
 
-const error      = ref('')
-const dias       = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday']
+//variables reactivas
+const routineTitle = ref('')
+const routineDescrip = ref('')
+const routineHour = ref('')
+const routineFrecuency = ref('daily')
+const routineDayOfMonth = ref(null)
+const routineDays = ref([])
 
-// Hábitos existentes del usuario para poder añadirlos a la rutina
-const userHabits    = ref([])
-const selectedHabits = ref([]) // ids de hábitos seleccionados
+const errorMessage = ref('')
+const weekDaysList = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday']
 
-// Pasos del checklist propio de la rutina
-const steps    = ref([])
-const newStep  = ref('')
+//variables para elegir habitos ya creados
+const allUserHabits = ref([])
+const chosenHabitIds = ref([]) 
 
-const form = ref({
-  title:      '',
-  descrip:    '',
-  hour:       '',
-  color:      '#6B8FA3',
-  frecuency:  'daily',
-  dayOfMonth: null,
-  days:       []
-})
+//variables para nuevos pasos
+const routineSteps = ref([])
+const stepInputText = ref('')
 
-// ── CARGAR HÁBITOS DEL USUARIO ────────────────────────────────
-
+//pedir los habitos del usuario para mostrarlo en el checklist
 async function fetchUserHabits() {
-  try {
-    const res  = await fetch(`${rutaApi}?entity=habits&user_id=${userStore.user.id}`)
-    const data = await res.json()
-    userHabits.value = data
-  } catch (e) {
-    // si no hay hábitos no es un error crítico
-  }
+  fetch(rutaApi + "?entity=habits&user_id=" + userStore.user.id)
+    .then(res => res.json())
+    .then(data => {
+      allUserHabits.value = data
+    })
+    .catch(err => console.log("No habits found"))
 }
 
-// ── HELPERS ───────────────────────────────────────────────────
-
-function toggleDay(day) {
-  const idx = form.value.days.indexOf(day)
-  if (idx === -1) form.value.days.push(day)
-  else            form.value.days.splice(idx, 1)
-}
-
-function toggleHabit(id) {
-  const idx = selectedHabits.value.indexOf(id)
-  if (idx === -1) selectedHabits.value.push(id)
-  else            selectedHabits.value.splice(idx, 1)
-}
-
-function addStep() {
-  if (!newStep.value.trim()) return
-  steps.value.push({ title: newStep.value.trim() })
-  newStep.value = ''
-}
-
-function removeStep(index) {
-  steps.value.splice(index, 1)
-}
-
-// ── CREAR RUTINA ──────────────────────────────────────────────
-
-async function createRoutine() {
-  error.value = ''
-
-  if (!form.value.title.trim()) {
-    error.value = 'Title is required'
-    return
-  }
-
-  if (form.value.frecuency === 'weekly' && form.value.days.length === 0) {
-    error.value = 'Select at least one day'
-    return
-  }
-
-  if (form.value.frecuency === 'monthly' && !form.value.dayOfMonth) {
-    error.value = 'Day of month is required'
-    return
-  }
-
-  if (selectedHabits.value.length === 0 && steps.value.length === 0) {
-    error.value = 'Add at least one habit or step'
-    return
-  }
-
-  const body = {
-    user_id:    userStore.user.id,
-    title:      form.value.title,
-    descrip:    form.value.descrip || null,
-    hour:       form.value.hour    || null,
-    color:      form.value.color,
-    frecuency:  form.value.frecuency,
-    dayOfMonth: form.value.frecuency === 'monthly' ? form.value.dayOfMonth : null,
-    days:       form.value.frecuency === 'weekly'  ? form.value.days       : [],
-    habit_ids:  selectedHabits.value,
-    steps:      steps.value.map(s => s.title)
-  }
-
-  const res  = await fetch(`${rutaApi}?entity=routines`, {
-    method:  'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body:    JSON.stringify(body)
-  })
-  const data = await res.json()
-
-  if (data.status === 'success') {
-    router.push('/routines')
+//funciones para manejar los arrays de seleccion
+function toggleDaySelection(day) {
+  let index = routineDays.value.indexOf(day)
+  if (index == -1) {
+    routineDays.value.push(day)
   } else {
-    error.value = 'Error creating routine'
+    routineDays.value.splice(index, 1)
   }
 }
 
-// ── LIFECYCLE ─────────────────────────────────────────────────
+function toggleHabitSelection(id) {
+  let index = chosenHabitIds.value.indexOf(id)
+  if (index == -1) {
+    chosenHabitIds.value.push(id)
+  } else {
+    chosenHabitIds.value.splice(index, 1)
+  }
+}
 
-onMounted(() => fetchUserHabits())
+//funcione para añadir nuevos pasos
+async function addNewStep() {
+  if (stepInputText.value.trim() == "") return
+  routineSteps.value.push({ title: stepInputText.value.trim() })
+  stepInputText.value = ''
+}
+
+//funcion para borrar pasos
+function deleteStep(index) {
+  routineSteps.value.splice(index, 1)
+}
+
+//funcion para guardar la rutina
+function saveRoutine() {
+  errorMessage.value = ''
+
+  //validaciones basicas para rutinas
+  if (routineTitle.value == '') {
+    errorMessage.value = 'Title is required'
+    return
+  }
+  if (routineFrecuency.value == 'weekly' && routineDays.value.length == 0) {
+    errorMessage.value = 'Select at least one day'
+    return
+  }
+  if (chosenHabitIds.value.length == 0 && routineSteps.value.length == 0) {
+    errorMessage.value = 'Add at least one habit or step'
+    return
+  }
+
+  //recorremos un array y guardamos los pasos
+  let finalSteps = []
+  for (let i = 0; i < routineSteps.value.length; i++) {
+    finalSteps.push(routineSteps.value[i].title)
+  }
+
+  //variable para guardar objeto para el backend
+  let routineData = {
+    user_id: userStore.user.id,
+    title: routineTitle.value,
+    descrip: routineDescrip.value,
+    hour: routineHour.value,
+    color: '#6B8FA3',
+    frecuency: routineFrecuency.value,
+    dayOfMonth: routineFrecuency.value == 'monthly' ? routineDayOfMonth.value : null,
+    days: routineFrecuency.value == 'weekly' ? routineDays.value : [],
+    habit_ids: chosenHabitIds.value,
+    steps: finalSteps
+  }
+//fetch post para guardar la nueva rutina
+  fetch(rutaApi + "?entity=routines", {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(routineData)
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.status === 'success') {
+      router.push('/routines')
+    } else {
+      errorMessage.value = 'Error creating routine'
+    }
+  })
+}
+
+onMounted(() => {
+  fetchUserHabits()
+})
 </script>
 
 <template>
   <div>
-
-    <!-- PAN DE MIGA -->
     <nav>
-      <RouterLink to="/">Home</RouterLink>
-      <span> > </span>
-      <RouterLink to="/routines">Routines</RouterLink>
-      <span> > </span>
+      <RouterLink to="/">Home</RouterLink> > 
+      <RouterLink to="/routines">Routines</RouterLink> > 
       <span>New Routine</span>
     </nav>
 
     <h1>New Routine</h1>
 
-    <p v-if="error">{{ error }}</p>
+    <p v-if="errorMessage" style="color: red;">{{ errorMessage }}</p>
 
-    <form @submit.prevent="createRoutine">
-
-      <!-- TÍTULO -->
+    <form @submit.prevent="saveRoutine">
       <div>
-        <label>Title *</label>
-        <input v-model="form.title" type="text" placeholder="Routine name">
+        <label>Title *</label><br>
+        <input v-model="routineTitle" type="text">
       </div>
 
-      <!-- DESCRIPCIÓN -->
+      <br>
+
       <div>
-        <label>Description</label>
-        <input v-model="form.descrip" type="text" placeholder="Optional description">
+        <label>Description</label><br>
+        <input v-model="routineDescrip" type="text">
       </div>
 
-      <!-- hour -->
+      <br>
+
       <div>
-        <label>Time (optional)</label>
-        <input v-model="form.hour" type="time">
+        <label>Time</label><br>
+        <input v-model="routineHour" type="time">
       </div>
 
-      <!-- FRECUENCIA -->
+      <br>
+
       <div>
-        <label>Frequency *</label>
-        <select v-model="form.frecuency">
+        <label>Frequency *</label><br>
+        <select v-model="routineFrecuency">
           <option value="daily">Daily</option>
           <option value="weekly">Weekly</option>
           <option value="monthly">Monthly</option>
         </select>
       </div>
 
-      <!-- Días específicos si es semanal -->
-      <div v-if="form.frecuency === 'weekly'">
-        <label>Days *</label>
-        <div>
-          <label v-for="day in dias" :key="day">
-            <input
-              type="checkbox"
-              :value="day"
-              :checked="form.days.includes(day)"
-              @change="toggleDay(day)"
-            >
-            {{ day }}
-          </label>
+      <br>
+
+      <div v-if="routineFrecuency == 'weekly'">
+        <label>Days:</label><br>
+        <div v-for="day in weekDaysList" :key="day">
+          <input type="checkbox" @change="toggleDaySelection(day)"> {{ day }}
         </div>
       </div>
 
-      <!-- Día del mes si es mensual -->
-      <div v-if="form.frecuency === 'monthly'">
-        <label>Day of month (1-31) *</label>
-        <input v-model.number="form.dayOfMonth" type="number" min="1" max="31">
+      <div v-if="routineFrecuency == 'monthly'">
+        <label>Day of month (1-31):</label><br>
+        <input v-model="routineDayOfMonth" type="number">
       </div>
 
-      <!-- AÑADIR HÁBITOS EXISTENTES -->
+      <br>
+
       <div>
-        <label>Add existing habits (optional)</label>
-
-        <p v-if="userHabits.length === 0">
-          You have no habits yet.
-          <RouterLink to="/habits/new">Create one first</RouterLink>
-        </p>
-
-        <div v-else>
-          <label v-for="habit in userHabits" :key="habit.id">
-            <input
-              type="checkbox"
-              :value="habit.id"
-              :checked="selectedHabits.includes(habit.id)"
-              @change="toggleHabit(habit.id)"
-            >
-            {{ habit.icon }} {{ habit.title }}
-            <span>[{{ habit.frecuency }}]</span>
-          </label>
+        <label>Add habits:</label><br>
+        <div v-for="habit in allUserHabits" :key="habit.id">
+          <input type="checkbox" @change="toggleHabitSelection(habit.id)">
+          {{ habit.icon }} {{ habit.title }}
         </div>
       </div>
 
-      <!-- AÑADIR PASOS PROPIOS DE LA RUTINA -->
+      <br>
+
       <div>
-        <label>Add steps (optional)</label>
-
-        <div>
-          <input
-            v-model="newStep"
-            type="text"
-            placeholder="Step description..."
-            @keydown.enter.prevent="addStep"
-          >
-          <button type="button" @click="addStep">Add</button>
-        </div>
-
-        <ul v-if="steps.length > 0">
-          <li v-for="(step, index) in steps" :key="index">
-            {{ step.title }}
-            <button type="button" @click="removeStep(index)">✕</button>
+        <label>Add steps:</label><br>
+        <input v-model="stepInputText" type="text">
+        <button type="button" @click="addNewStep">Add</button>
+        <ul>
+          <li v-for="(s, index) in routineSteps" :key="index">
+            {{ s.title }} <button type="button" @click="deleteStep(index)">x</button>
           </li>
         </ul>
       </div>
 
-      <!-- RESUMEN -->
-      <div v-if="selectedHabits.length > 0 || steps.length > 0">
-        <p>
-          This routine will have
-          {{ selectedHabits.length }} habit(s) and
-          {{ steps.length }} step(s).
-          Total: {{ selectedHabits.length + steps.length }} items.
-        </p>
-        <p>
-          It will be marked as <strong>Done</strong> when 100% is completed,
-          <strong>Tried</strong> when at least 50% is completed.
-        </p>
-      </div>
+      <br>
 
-      <!-- ACCIONES -->
       <button type="submit">Create Routine</button>
       <button type="button" @click="router.push('/routines')">Cancel</button>
-
     </form>
-
   </div>
 </template>
