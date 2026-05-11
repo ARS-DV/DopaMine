@@ -1,18 +1,20 @@
 <script setup>
+//importaciones necesaria para el codigo
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { useUserStore } from '@/stores/userStore'
-import { rutaApi } from '@/config.js'
+import { useRouter } from 'vue-router'//acceso router del navegador entre vistas
+import { useUserStore } from '@/stores/userStore'  //acceso Store Pinia del usuario logueado
+import { rutaApi } from '@/config.js' //url de la base API
 
 const router    = useRouter()
 const userStore = useUserStore()
-
+//variables reactivas para datos del formulario y errores
 const form  = ref({ email: '', pswd: '' })
 const error = ref('')
 
+//funcion del login
 async function login() {
   error.value = ''
-
+//controladores de errores
   if (!form.value.email || !form.value.pswd) {
     error.value = 'Please fill in all fields'
     return
@@ -49,7 +51,7 @@ async function login() {
       </div>
 
       <h1 class="login-title">Sign In</h1>
-      <p class="login-sub">Welcome back 👋</p>
+      <p class="login-sub">Welcome back </p>
 
       <!-- ERROR -->
       <div v-if="error" class="error-text">
