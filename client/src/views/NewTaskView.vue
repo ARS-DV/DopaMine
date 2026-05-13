@@ -117,93 +117,359 @@ async function createNewTask() {
 </script>
 
 <template>
-  <div>
+  <div class="newtask-wrapper">
+    <div class="newtask-container">
 
-    <nav>
-      <RouterLink to="/">Home</RouterLink>
-      <span> > </span>
-      <RouterLink to="/tasks">Tasks</RouterLink>
-      <span> > </span>
-      <span>New Task</span>
-    </nav>
+      <!-- PAN DE MIGA -->
+      <nav class="breadcrumb-dopamine breadcrumb-visible mb-4 fade-up">
+        <RouterLink to="/"><i class="bi bi-house me-1"></i>Home</RouterLink>
+        <span class="separator"><i class="bi bi-chevron-right"></i></span>
+        <RouterLink to="/tasks">Tasks</RouterLink>
+        <span class="separator"><i class="bi bi-chevron-right"></i></span>
+        <span class="current">New Task</span>
+      </nav>
 
-    <h1>New Task</h1>
-
-    <p v-if="error" style="color: red;">{{ error }}</p>
-
-    <form @submit.prevent="createNewTask">
-
-      <div>
-        <label>Title *</label><br>
-        <input v-model="titleInput" type="text" placeholder="Task name">
+      <!-- CABECERA -->
+      <div class="mb-4 fade-up delay-1">
+        <h1 class="page-title">
+          <em>add a new</em>
+          Task
+        </h1>
       </div>
 
-      <br>
-
-      <div>
-        <label>Description</label><br>
-        <input v-model="descripInput" type="text" placeholder="Optional description">
+      <!-- ERROR -->
+      <div v-if="error" class="error-text mb-4">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        <strong>{{ error }}</strong>
       </div>
 
-      <br>
+      <!-- FORMULARIO -->
+      <form @submit.prevent="createNewTask" class="d-flex flex-column gap-4 fade-up delay-2">
 
-      <div>
-        <label>Difficulty *</label><br>
-        <label>
-          <input type="radio" v-model="difficultyInput" value="easy"> Easy
-        </label>
-        <label>
-          <input type="radio" v-model="difficultyInput" value="medium"> Medium
-        </label>
-        <label>
-          <input type="radio" v-model="difficultyInput" value="hard"> Hard
-        </label>
-      </div>
-
-      <br>
-
-      <div>
-        <label>Start date </label><br>
-        <input v-model="startDateInput" type="date">
-        <input v-model="startTimeInput" type="time">
-      </div>
-
-      <br>
-
-      <div>
-        <label>Due date *</label><br>
-        <input v-model="expDateInput" type="date">
-        <input v-model="expTimeInput" type="time">
-      </div>
-
-      <br>
-
-      <div>
-        <label>Checklist </label><br>
-
-        <div>
+        <!-- TÍTULO -->
+        <div class="form-section">
+          <label class="form-label-accessible">
+            <i class="bi bi-pencil me-2"></i>Title <span class="required-star">*</span>
+          </label>
           <input
-            v-model="newItemTitle"
+            v-model="titleInput"
             type="text"
-            placeholder="Add a step..."
+            class="form-control dopamine-input input-lg"
+            placeholder="What do you need to do?"
           >
-          <button type="button" @click="addItem">Add</button>
         </div>
 
-        <ul v-if="checklistItems.length > 0">
-          <li v-for="(item, index) in checklistItems" :key="index">
-            {{ item.title }}
-            <button type="button" @click="removeItem(index)">✕</button>
-          </li>
-        </ul>
-      </div>
+        <!-- DESCRIPCIÓN -->
+        <div class="form-section">
+          <label class="form-label-accessible">
+            <i class="bi bi-text-left me-2"></i>Description
+          </label>
+          <input
+            v-model="descripInput"
+            type="text"
+            class="form-control dopamine-input input-lg"
+            placeholder="Add more details..."
+          >
+        </div>
 
-      <br>
+        <!-- DIFICULTAD -->
+        <div class="form-section">
+          <label class="form-label-accessible mb-3">
+            <i class="bi bi-bar-chart me-2"></i>Difficulty <span class="required-star">*</span>
+          </label>
+          <div class="row g-2">
+            <div class="col-4">
+              <div
+                class="diff-option"
+                :class="difficultyInput === 'easy' ? 'sel-easy' : ''"
+                @click="difficultyInput = 'easy'"
+              >
+                <i class="bi bi-circle d-block mb-1 diff-icon"></i>
+                Easy
+              </div>
+            </div>
+            <div class="col-4">
+              <div
+                class="diff-option"
+                :class="difficultyInput === 'medium' ? 'sel-medium' : ''"
+                @click="difficultyInput = 'medium'"
+              >
+                <i class="bi bi-dash-circle d-block mb-1 diff-icon"></i>
+                Medium
+              </div>
+            </div>
+            <div class="col-4">
+              <div
+                class="diff-option"
+                :class="difficultyInput === 'hard' ? 'sel-hard' : ''"
+                @click="difficultyInput = 'hard'"
+              >
+                <i class="bi bi-fire d-block mb-1 diff-icon"></i>
+                Hard
+              </div>
+            </div>
+          </div>
+          <!-- Radios ocultos para mantener la lógica -->
+          <div class="d-none">
+            <input type="radio" v-model="difficultyInput" value="easy">
+            <input type="radio" v-model="difficultyInput" value="medium">
+            <input type="radio" v-model="difficultyInput" value="hard">
+          </div>
+        </div>
 
-      <button type="submit">Create Task</button>
-      <button type="button" @click="router.push('/tasks')">Cancel</button>
+        <!-- FECHAS -->
+        <div class="row g-4">
+          <div class="col-12 col-md-6">
+            <div class="form-section h-100">
+              <label class="form-label-accessible mb-3">
+                <i class="bi bi-calendar-plus me-2"></i>Start date
+              </label>
+              <div class="row g-2">
+                <div class="col-7">
+                  <input v-model="startDateInput" type="date" class="form-control dopamine-input input-date">
+                </div>
+                <div class="col-5">
+                  <input v-model="startTimeInput" type="time" class="form-control dopamine-input input-date">
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-12 col-md-6">
+            <div class="form-section h-100">
+              <label class="form-label-accessible mb-3">
+                <i class="bi bi-calendar-x me-2"></i>Due date <span class="required-star">*</span>
+              </label>
+              <div class="row g-2">
+                <div class="col-7">
+                  <input v-model="expDateInput" type="date" class="form-control dopamine-input input-date">
+                </div>
+                <div class="col-5">
+                  <input v-model="expTimeInput" type="time" class="form-control dopamine-input input-date">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
-    </form>
+        <!-- CHECKLIST -->
+        <div class="form-section">
+          <label class="form-label-accessible mb-3">
+            <i class="bi bi-list-check me-2"></i>Checklist
+          </label>
 
+          <div class="d-flex gap-2 mb-3">
+            <input
+              v-model="newItemTitle"
+              type="text"
+              class="form-control dopamine-input flex-grow-1 input-lg"
+              placeholder="Add a step..."
+              @keydown.enter.prevent="addItem"
+            >
+            <button
+              type="button"
+              class="btn-dopamine btn-dopamine-ghost checklist-add-btn"
+              @click="addItem"
+            >
+              <i class="bi bi-plus me-1"></i> Add
+            </button>
+          </div>
+
+          <div v-if="checklistItems.length > 0" class="d-flex flex-column gap-2">
+            <div
+              v-for="(item, index) in checklistItems"
+              :key="index"
+              class="checklist-item"
+            >
+              <i class="bi bi-grip-vertical checklist-drag-icon"></i>
+              <span class="flex-grow-1 checklist-item-text">{{ item.title }}</span>
+              <button
+                type="button"
+                class="btn-dopamine btn-dopamine-danger checklist-remove-btn"
+                @click="removeItem(index)"
+              >
+                <i class="bi bi-x"></i>
+              </button>
+            </div>
+          </div>
+
+          <p v-else class="checklist-empty-text">
+            <i class="bi bi-info-circle me-1"></i>
+            No steps added yet. Break the task into smaller pieces if it helps.
+          </p>
+        </div>
+
+        <!-- BOTONES -->
+        <div class="d-flex gap-3 flex-wrap pb-2">
+          <button type="submit" class="btn-dopamine btn-dopamine-primary form-action-btn">
+            <i class="bi bi-check2 me-2"></i> Create Task
+          </button>
+          <button
+            type="button"
+            class="btn-dopamine btn-dopamine-cancel form-action-btn"
+            @click="router.push('/tasks')"
+          >
+            <i class="bi bi-x me-2"></i> Cancel
+          </button>
+        </div>
+
+      </form>
+    </div>
   </div>
 </template>
+
+<style scoped>
+.newtask-wrapper {
+  min-height: 100vh;
+  background-color: var(--bg-subtle);
+  padding: 2.5rem 1.5rem 5rem;
+  font-family: 'Atkinson Hyperlegible', sans-serif;
+}
+
+.newtask-container {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+@media (max-width: 768px) {
+  .newtask-wrapper { padding: 1.5rem 1rem 4rem; }
+}
+
+/* SECCIONES DEL FORM */
+.form-section {
+  background: var(--bg-card);
+  border: 1.5px solid var(--vanilla-mid);
+  border-radius: 12px;
+  padding: 1.2rem 1.3rem;
+}
+
+/* BREADCRUMB MÁS VISIBLE */
+.breadcrumb-visible {
+  font-size: 1rem !important;
+  font-weight: 600 !important;
+  background: var(--bg-card);
+  border: 1.5px solid var(--vanilla-mid);
+  border-radius: 10px;
+  padding: 0.7rem 1rem !important;
+  
+}
+
+.breadcrumb-visible a {
+  color: var(--cinnamon-mid) !important;
+  font-weight: 700 !important;
+  font-size: 1rem !important;
+  
+}
+
+.breadcrumb-visible .current {
+  color: var(--cinnamon-dark) !important;
+  font-weight: 700 !important;
+  font-size: 1rem !important;
+  
+}
+
+.breadcrumb-visible .separator {
+  font-size: 0.9rem;
+  color: var(--vanilla-mid) !important;
+}
+
+/* LABELS */
+.form-label-accessible {
+  font-family: 'Atkinson Hyperlegible', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--cinnamon-dark);
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.required-star {
+  color: var(--state-error);
+  font-weight: 700;
+  margin-left: 0.2rem;
+}
+
+/* INPUT GRANDE */
+.input-lg {
+  font-size: 1rem !important;
+  padding: 0.7rem 0.9rem !important;
+  min-height: 48px !important;
+}
+
+/* INPUTS DE FECHA MÁS GRANDES */
+.input-date {
+  font-size: 0.95rem !important;
+  padding: 0.65rem 0.7rem !important;
+  min-height: 48px !important;
+}
+
+/* DIFICULTAD */
+.diff-option {
+  padding: 0.9rem 0.5rem;
+  font-family: 'Atkinson Hyperlegible', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.diff-icon { font-size: 1.4rem; }
+
+/* CHECKLIST */
+.checklist-add-btn {
+  min-height: 44px;
+  white-space: nowrap;
+  font-family: 'Atkinson Hyperlegible', sans-serif;
+  font-weight: 700;
+}
+
+.checklist-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.9rem;
+  background: var(--bg-base);
+  border: 1px solid var(--vanilla-light);
+  border-left: 3px solid var(--vanilla-mid);
+  border-radius: 8px;
+}
+
+.checklist-drag-icon {
+  color: var(--vanilla-mid);
+  font-size: 1rem;
+}
+
+.checklist-item-text {
+  font-family: 'Atkinson Hyperlegible', sans-serif;
+  font-size: 0.92rem;
+  font-weight: 500;
+  color: var(--cinnamon-dark);
+}
+
+.checklist-remove-btn {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+  border-radius: 6px;
+}
+
+.checklist-empty-text {
+  font-family: 'Atkinson Hyperlegible', sans-serif;
+  font-size: 0.85rem;
+  color: var(--cinnamon-soft);
+  margin: 0.2rem 0 0;
+}
+
+/* BOTONES ACCIÓN */
+.form-action-btn {
+  font-family: 'Atkinson Hyperlegible', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  min-height: 48px;
+  padding: 0.7rem 1.5rem;
+}
+</style>
