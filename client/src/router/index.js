@@ -62,6 +62,8 @@ const router = createRouter({
       component: NewRoutineView, 
       meta: { hideHeader: true } 
     },
+    { path: '/calendar', component: CalendarView },
+    { path: '/progress', component: ProgressView }
   ],
 });
 
