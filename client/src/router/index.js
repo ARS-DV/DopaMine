@@ -9,7 +9,10 @@ import CalendarView from "@/views/CalendarView.vue";
 import ProgressView from "@/views/ProgressView.vue";
 import NewHabitView from "@/views/NewHabitView.vue";
 import NewTaskView from "@/views/NewTaskView.vue";
-import NewRoutineView from "@/views/NewRoutineView.vue";
+import NewRoutineView from "@/views/RoutinesView.vue";
+import EditTaskView from "@/views/EditTaskView.vue";
+import EditRoutineView from "@/views/EditRoutineView.vue";
+import AdminView from "@/views/AdminView.vue";
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -47,6 +50,10 @@ const router = createRouter({
       path: "/progress", 
       component: ProgressView 
     },
+    { 
+      path: "/admin", 
+      component: AdminView 
+    },
     {
       path: "/habits/new",
       name: "habits.new",
@@ -63,39 +70,20 @@ const router = createRouter({
       meta: { hideHeader: true } 
     },
     { path: '/calendar', component: CalendarView },
-    { path: '/progress', component: ProgressView }
+    { path: '/progress', component: ProgressView },
+    { 
+      path: '/tasks/edit/:id', 
+      component: EditTaskView, 
+      meta: { hideHeader: true } 
+    },
+    { 
+      path: '/routines/edit/:id', 
+      component: EditRoutineView, 
+      meta: { hideHeader: true } 
+    },
   ],
+  
 });
 
-/*router.beforeEach((to, from, next) => {
-  
-  //preguntamos las rutas
-  if (to.path == '/usuarios' || to.path == '/rutasadmin' || to.path == '/crearruta') {
-    
-    const datosSesion = JSON.parse(localStorage.getItem('sesion'));
-    
-    if (datosSesion && datosSesion.rol == 'admin') {
-      next(); //puede entrar
-    } else {
-      alert("Acceso denegado pilluelo/a");
-      next('/'); //vuelve a home
-    }
-  } else {
-    next(); //si es cualquier otra puede entrar
-  }
 
-  if (to.path == '/asignaciones') {
-    
-    const datosSesion = JSON.parse(localStorage.getItem('sesion'));
-    
-    if (datosSesion && datosSesion.rol == 'guia') {
-      next(); //puede entrar
-    } else {
-      alert("Acceso denegado pilluelo/a");
-      next('/'); //vuelve a home
-    }
-  } else {
-    next(); //si es cualquier otra puede entrar
-  }
-});*/
 export default router;

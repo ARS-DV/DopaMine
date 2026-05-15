@@ -92,12 +92,12 @@ async function saveHabit() {
     <div class="newhabit-container">
 
       <!-- PAN DE MIGA -->
-      <nav class="breadcrumb-dopamine breadcrumb-visible mb-4 fade-up">
-        <RouterLink to="/"><i class="bi bi-house me-1"></i>Home</RouterLink>
-        <span class="separator"><i class="bi bi-chevron-right"></i></span>
+      <nav class="breadcrumb-dopamine breadcrumb-visible mb-4 fade-up" aria-label="Breadcrumb navigation">
+        <RouterLink to="/"><i class="bi bi-house me-1" aria-hidden="true"></i>Home</RouterLink>
+        <span class="separator" aria-hidden="true"><i class="bi bi-chevron-right"></i></span>
         <RouterLink to="/habits">Habits</RouterLink>
-        <span class="separator"><i class="bi bi-chevron-right"></i></span>
-        <span class="current">New Habit</span>
+        <span class="separator" aria-hidden="true"><i class="bi bi-chevron-right"></i></span>
+        <span class="current" aria-current="page">New Habit</span>
       </nav>
 
       <!-- CABECERA -->
@@ -109,33 +109,36 @@ async function saveHabit() {
       </div>
 
       <!-- ERROR -->
-      <div v-if="error" class="error-text mb-4">
-        <i class="bi bi-exclamation-triangle me-2"></i>
+      <div v-if="error" class="error-text mb-4" role="alert">
+        <i class="bi bi-exclamation-triangle me-2" aria-hidden="true"></i>
         <strong>{{ error }}</strong>
       </div>
 
       <!-- FORMULARIO -->
-      <form @submit.prevent="saveHabit" class="d-flex flex-column gap-4 fade-up delay-2">
+      <form @submit.prevent="saveHabit" class="d-flex flex-column gap-4 fade-up delay-2" novalidate>
 
         <!-- NOMBRE -->
         <div class="form-section">
-          <label class="form-label-accessible">
-            <i class="bi bi-pencil me-2"></i>Habit name <span class="required-star">*</span>
+          <label for="habit-title" class="form-label-accessible">
+            <i class="bi bi-pencil me-2" aria-hidden="true"></i>Habit name <span class="required-star" aria-hidden="true">*</span>
           </label>
           <input
+            id="habit-title"
             v-model="title"
             type="text"
             class="form-control dopamine-input input-lg"
             placeholder="e.g. Drink water, Read 10 min..."
+            aria-required="true"
           >
         </div>
 
         <!-- DESCRIPCIÓN -->
         <div class="form-section">
-          <label class="form-label-accessible">
-            <i class="bi bi-text-left me-2"></i>Description
+          <label for="habit-descrip" class="form-label-accessible">
+            <i class="bi bi-text-left me-2" aria-hidden="true"></i>Description
           </label>
           <input
+            id="habit-descrip"
             v-model="description"
             type="text"
             class="form-control dopamine-input input-lg"
@@ -145,23 +148,25 @@ async function saveHabit() {
 
         <!-- SELECTOR DE ICONO -->
         <div class="form-section">
-          <label class="form-label-accessible mb-3">
-            <i class="bi bi-emoji-smile me-2"></i>Icon
+          <label class="form-label-accessible mb-3" id="icon-label">
+            <i class="bi bi-emoji-smile me-2" aria-hidden="true"></i>Icon
           </label>
-          <div class="emoji-grid">
+          <div class="emoji-grid" role="group" aria-labelledby="icon-label">
             <button
               v-for="e in emojis"
               :key="e"
               type="button"
               class="emoji-btn"
               :class="icon == e ? 'emoji-btn-selected' : ''"
+              :aria-label="'Select icon ' + e"
+              :aria-pressed="icon == e"
               @click="icon = e"
             >
               {{ e }}
             </button>
           </div>
-          <div v-if="icon" class="emoji-selected-preview mt-3">
-            <span class="emoji-preview-icon">{{ icon }}</span>
+          <div v-if="icon" class="emoji-selected-preview mt-3" aria-live="polite">
+            <span class="emoji-preview-icon" aria-hidden="true">{{ icon }}</span>
             <span class="emoji-preview-text">Selected icon</span>
           </div>
         </div>
@@ -169,16 +174,21 @@ async function saveHabit() {
         <!-- FRECUENCIA -->
         <div class="form-section">
           <label class="form-label-accessible mb-3">
-            <i class="bi bi-arrow-repeat me-2"></i>Frequency <span class="required-star">*</span>
+            <i class="bi bi-arrow-repeat me-2" aria-hidden="true"></i>Frequency <span class="required-star" aria-hidden="true">*</span>
           </label>
-          <div class="row g-2">
+          <div class="row g-2" role="radiogroup" aria-label="Select frequency">
             <div class="col-4">
               <div
                 class="freq-btn"
                 :class="frecuency === 'daily' ? 'freq-btn-daily' : ''"
+                role="radio"
+                :aria-checked="frecuency === 'daily'"
+                tabindex="0"
                 @click="frecuency = 'daily'"
+                @keydown.enter="frecuency = 'daily'"
+                @keydown.space.prevent="frecuency = 'daily'"
               >
-                <i class="bi bi-sun d-block mb-1 freq-btn-icon"></i>
+                <i class="bi bi-sun d-block mb-1 freq-btn-icon" aria-hidden="true"></i>
                 Daily
               </div>
             </div>
@@ -186,9 +196,14 @@ async function saveHabit() {
               <div
                 class="freq-btn"
                 :class="frecuency === 'weekly' ? 'freq-btn-weekly' : ''"
+                role="radio"
+                :aria-checked="frecuency === 'weekly'"
+                tabindex="0"
                 @click="frecuency = 'weekly'"
+                @keydown.enter="frecuency = 'weekly'"
+                @keydown.space.prevent="frecuency = 'weekly'"
               >
-                <i class="bi bi-calendar-week d-block mb-1 freq-btn-icon"></i>
+                <i class="bi bi-calendar-week d-block mb-1 freq-btn-icon" aria-hidden="true"></i>
                 Weekly
               </div>
             </div>
@@ -196,15 +211,20 @@ async function saveHabit() {
               <div
                 class="freq-btn"
                 :class="frecuency === 'monthly' ? 'freq-btn-monthly' : ''"
+                role="radio"
+                :aria-checked="frecuency === 'monthly'"
+                tabindex="0"
                 @click="frecuency = 'monthly'"
+                @keydown.enter="frecuency = 'monthly'"
+                @keydown.space.prevent="frecuency = 'monthly'"
               >
-                <i class="bi bi-calendar-month d-block mb-1 freq-btn-icon"></i>
+                <i class="bi bi-calendar-month d-block mb-1 freq-btn-icon" aria-hidden="true"></i>
                 Monthly
               </div>
             </div>
           </div>
           <!-- Select oculto para mantener la lógica -->
-          <select v-model="frecuency" class="d-none">
+          <select v-model="frecuency" class="d-none" aria-hidden="true">
             <option value="daily">Daily</option>
             <option value="weekly">Weekly</option>
             <option value="monthly">Monthly</option>
@@ -214,17 +234,22 @@ async function saveHabit() {
         <!-- DÍAS DE LA SEMANA si es semanal -->
         <div v-if="frecuency == 'weekly'" class="form-section fade-up">
           <label class="form-label-accessible mb-3">
-            <i class="bi bi-calendar-week me-2 text-weekly"></i>
+            <i class="bi bi-calendar-week me-2 text-weekly" aria-hidden="true"></i>
             <span class="text-weekly">Days of the week</span>
-            <span class="required-star ms-1">*</span>
+            <span class="required-star ms-1" aria-hidden="true">*</span>
           </label>
-          <div class="days-grid">
+          <div class="days-grid" role="group" aria-label="Select days of the week">
             <div
               v-for="day in daysList"
               :key="day"
               class="day-btn"
               :class="selectedDays.includes(day) ? 'day-btn-selected' : ''"
+              role="checkbox"
+              :aria-checked="selectedDays.includes(day)"
+              tabindex="0"
               @click="selectDay(day)"
+              @keydown.enter="selectDay(day)"
+              @keydown.space.prevent="selectDay(day)"
             >
               <!-- Checkbox oculto para mantener la lógica -->
               <input
@@ -233,12 +258,13 @@ async function saveHabit() {
                 :checked="selectedDays.includes(day)"
                 @change="selectDay(day)"
                 class="d-none"
+                aria-hidden="true"
               >
               {{ day.slice(0, 3).toUpperCase() }}
             </div>
           </div>
-          <p class="days-hint">
-            <i class="bi bi-info-circle me-1"></i>
+          <p class="days-hint" aria-live="polite">
+            <i class="bi bi-info-circle me-1" aria-hidden="true"></i>
             {{ selectedDays.length }} day(s) selected
           </p>
         </div>
@@ -246,13 +272,14 @@ async function saveHabit() {
         <!-- DÍA DEL MES si es mensual -->
         <!--TODO : Validar febrero-->
         <div v-if="frecuency == 'monthly'" class="form-section fade-up">
-          <label class="form-label-accessible mb-2">
-            <i class="bi bi-calendar-event me-2 text-monthly"></i>
+          <label for="habit-dayofmonth" class="form-label-accessible mb-2">
+            <i class="bi bi-calendar-event me-2 text-monthly" aria-hidden="true"></i>
             <span class="text-monthly">Day of the month</span>
-            <span class="required-star ms-1">*</span>
+            <span class="required-star ms-1" aria-hidden="true">*</span>
           </label>
           <p class="field-hint mb-2">Between 1 and 31</p>
           <input
+            id="habit-dayofmonth"
             v-model="dayOfMonth"
             type="number"
             min="1"
@@ -260,20 +287,22 @@ async function saveHabit() {
             class="form-control dopamine-input input-date"
             placeholder="e.g. 15"
             style="max-width: 140px"
+            aria-required="true"
           >
         </div>
 
         <!-- BOTONES -->
         <div class="d-flex gap-3 flex-wrap pb-2">
           <button type="submit" class="btn-dopamine btn-dopamine-primary form-action-btn">
-            <i class="bi bi-check2 me-2"></i> Create Habit
+            <i class="bi bi-check2 me-2" aria-hidden="true"></i> Create Habit
           </button>
           <button
             type="button"
             class="btn-dopamine btn-dopamine-cancel form-action-btn"
+            aria-label="Cancel and go back to habits"
             @click="router.push('/habits')"
           >
-            <i class="bi bi-x me-2"></i> Cancel
+            <i class="bi bi-x me-2" aria-hidden="true"></i> Cancel
           </button>
         </div>
 
@@ -384,6 +413,11 @@ async function saveHabit() {
   transform: scale(1.08);
 }
 
+.emoji-btn:focus-visible {
+  outline: 3px solid var(--cinnamon-mid);
+  outline-offset: 3px;
+}
+
 .emoji-btn-selected {
   border-color: var(--cinnamon-mid) !important;
   background: var(--vanilla-light) !important;
@@ -411,7 +445,7 @@ async function saveHabit() {
   cursor: pointer;
   font-family: 'Atkinson Hyperlegible', sans-serif;
   font-size: 0.9rem;
-  font-weight: 600;
+  font-weight: 700;
   border-radius: 8px;
   border: 1.5px solid var(--vanilla-mid);
   background: var(--bg-subtle);
@@ -419,9 +453,9 @@ async function saveHabit() {
   transition: all 0.15s;
 }
 
-.freq-btn:hover      { background: var(--vanilla-light); }
-.freq-btn-icon       { font-size: 1.3rem; }
-
+.freq-btn:hover           { background: var(--vanilla-light); }
+.freq-btn:focus-visible   { outline: 3px solid var(--cinnamon-mid); outline-offset: 2px; }
+.freq-btn-icon            { font-size: 1.3rem; }
 .freq-btn-daily   { background: var(--bg-base);       border-color: var(--cinnamon-mid); color: var(--cinnamon-dark); }
 .freq-btn-weekly  { background: var(--state-info-bg);  border-color: var(--btn-info);     color: #2A5068; }
 .freq-btn-monthly { background: var(--vanilla-light);  border-color: var(--vanilla-deep); color: var(--cinnamon-dark); }
@@ -456,23 +490,10 @@ async function saveHabit() {
   user-select: none;
 }
 
-.day-btn:hover {
-  border-color: var(--btn-info);
-  background: var(--state-info-bg);
-  color: #2A5068;
-}
-
-.day-btn-selected {
-  background: var(--btn-info) !important;
-  border-color: var(--btn-info) !important;
-  color: #fff !important;
-}
-
-.days-hint {
-  font-size: 0.82rem;
-  color: var(--cinnamon-soft);
-  margin: 0.6rem 0 0;
-}
+.day-btn:hover        { border-color: var(--btn-info); background: var(--state-info-bg); color: #2A5068; }
+.day-btn:focus-visible { outline: 3px solid var(--btn-info); outline-offset: 2px; }
+.day-btn-selected     { background: var(--btn-info) !important; border-color: var(--btn-info) !important; color: #fff !important; }
+.days-hint            { font-size: 0.82rem; color: var(--cinnamon-soft); margin: 0.6rem 0 0; }
 
 /* BOTONES ACCIÓN */
 .form-action-btn {

@@ -41,24 +41,6 @@ function fetchRoutines() {
     })
 }
 
-function cycleHabitInRoutine(routine, habit) {
-  let currentState = habit.done_today
-  if (currentState == null) { currentState = 0 }
-  let nextState = (parseInt(currentState) + 1) % 3
-
-  fetch(rutaApi + "?entity=habits&id=" + habit.id, {
-    method:  'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body:    JSON.stringify({ done: nextState })
-  })
-  .then(function(res) { return res.json() })
-  .then(function(data) {
-    if (data.status === 'success') {
-      habit.done_today = nextState
-      updateRoutineProgress(routine)
-    }
-  })
-}
 
 function toggleRoutineStep(routine, step) {
   let newStatus = 1
@@ -79,22 +61,16 @@ function toggleRoutineStep(routine, step) {
 }
 
 function updateRoutineProgress(routine) {
-  let habitList = routine.habits    || []
   let stepList  = routine.checklist || []
-  let totalItems = habitList.length + stepList.length
+  let totalItems = stepList.length
   if (totalItems == 0) return
-
-  let completedHabits = 0
-  for (let i = 0; i < habitList.length; i++) {
-    if (parseInt(habitList[i].done_today) == 2) { completedHabits++ }
-  }
 
   let completedSteps = 0
   for (let j = 0; j < stepList.length; j++) {
     if (stepList[j].done == true) { completedSteps++ }
   }
 
-  let totalDone  = completedHabits + completedSteps
+  let totalDone  = completedSteps
   let percentage = (totalDone / totalItems) * 100
 
   let finalState = 0
@@ -125,6 +101,7 @@ function deleteRoutine(id) {
     .then(function(res) { return res.json() })
     .then(function(data) {
       if (data.status === 'success') {
+        if (expandedRoutines.value[id]) { expandedRoutines.value[id] = false }
         routines.value = routines.value.filter(function(r) { return r.id !== id })
       } else {
         error.value = 'Error deleting routine'
@@ -139,27 +116,19 @@ function getStatusLabel(val) {
   return 'Pending'
 }
 
-function getHabitIcon(val) {
-  let v = parseInt(val)
-  if (v == 2) { return 'bi-check-circle-fill' }
-  if (v == 1) { return 'bi-dash-circle' }
-  return 'bi-circle'
-}
-
 function calculatePercentage(routine) {
-  let total = (routine.habits ? routine.habits.length : 0) + (routine.checklist ? routine.checklist.length : 0)
+  let total = (routine.checklist ? routine.checklist.length : 0)
   if (total == 0) return 0
-  let doneH = routine.habits    ? routine.habits.filter(function(h)    { return parseInt(h.done_today) == 2 }).length : 0
   let doneS = routine.checklist ? routine.checklist.filter(function(s) { return s.done == true }).length : 0
-  return Math.round(((doneH + doneS) / total) * 100)
+  return Math.round((doneS / total) * 100)
 }
 
-// stats para el strip
-const bestStreak   = computed(function() {
+const bestStreak = computed(function() {
   let max = 0
   routines.value.forEach(function(r) { if ((r.streak || 0) > max) { max = r.streak } })
   return max
 })
+
 const doneTodayCount = computed(function() {
   return routines.value.filter(function(r) { return parseInt(r.done_today) == 2 }).length
 })
@@ -185,20 +154,24 @@ onMounted(function() { fetchRoutines() })
         <em>stick to your</em>
         Routines
       </h1>
-      <button class="btn-dopamine btn-dopamine-primary" @click="router.push('/routines/new')">
-        <i class="bi bi-plus me-1"></i> New routine
+      <button
+        class="btn-dopamine btn-dopamine-primary"
+        aria-label="Create new routine"
+        @click="router.push('/routines/new')"
+      >
+        <i class="bi bi-plus me-1" aria-hidden="true"></i> New Routine
       </button>
     </div>
 
     <!-- STATS STRIP -->
-    <div class="row g-3 mb-4 fade-up delay-1">
+    <div class="row g-3 mb-4 fade-up delay-1" aria-label="Routine statistics">
       <div class="col-12 col-sm-4">
         <div class="stat-strip strip-warn">
           <div>
             <div class="stat-num">{{ bestStreak }}</div>
             <div class="stat-label">Best streak</div>
           </div>
-          <i class="bi bi-fire stat-icon ms-3"></i>
+          <i class="bi bi-fire stat-icon ms-3" aria-hidden="true"></i>
         </div>
       </div>
       <div class="col-12 col-sm-4">
@@ -207,7 +180,7 @@ onMounted(function() { fetchRoutines() })
             <div class="stat-num">{{ doneTodayCount }}/{{ routines.length }}</div>
             <div class="stat-label">Done today</div>
           </div>
-          <i class="bi bi-check2-square stat-icon ms-3"></i>
+          <i class="bi bi-check2-square stat-icon ms-3" aria-hidden="true"></i>
         </div>
       </div>
       <div class="col-12 col-sm-4">
@@ -216,26 +189,28 @@ onMounted(function() { fetchRoutines() })
             <div class="stat-num">{{ routines.length }}</div>
             <div class="stat-label">Total routines</div>
           </div>
-          <i class="bi bi-list-check stat-icon ms-3"></i>
+          <i class="bi bi-list-check stat-icon ms-3" aria-hidden="true"></i>
         </div>
       </div>
     </div>
 
     <!-- ERROR -->
-    <div v-if="error" class="error-text mb-3">
-      <i class="bi bi-exclamation-triangle me-2"></i>{{ error }}
+    <div v-if="error" class="error-text mb-3" role="alert">
+      <i class="bi bi-exclamation-triangle me-2" aria-hidden="true"></i>{{ error }}
     </div>
 
     <!-- LOADING -->
-    <div v-if="loading" class="loading-text">
-      <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+    <div v-if="loading" class="loading-text" aria-live="polite">
+      <div class="spinner-border spinner-border-sm me-2" role="status">
+        <span class="visually-hidden">Loading routines...</span>
+      </div>
       Loading...
     </div>
 
     <template v-else>
 
       <!-- FILTROS -->
-      <div class="d-flex flex-wrap gap-2 mb-4 fade-up delay-2">
+      <div class="d-flex flex-wrap gap-2 mb-4 fade-up delay-2" role="group" aria-label="Filter routines">
         <button class="filter-tab" :class="filter === 'all'     ? 'active' : ''" @click="filter = 'all'">All ({{ routines.length }})</button>
         <button class="filter-tab" :class="filter === 'daily'   ? 'active' : ''" @click="filter = 'daily'">Daily</button>
         <button class="filter-tab" :class="filter === 'weekly'  ? 'active' : ''" @click="filter = 'weekly'">Weekly</button>
@@ -246,32 +221,37 @@ onMounted(function() { fetchRoutines() })
 
       <!-- LISTA VACÍA -->
       <div v-if="filteredRoutines.length === 0" class="empty-state fade-up">
-        <i class="bi bi-list-check empty-icon"></i>
+        <i class="bi bi-list-check empty-icon" aria-hidden="true"></i>
         <p class="empty-title">No routines found</p>
         <button class="btn-dopamine btn-dopamine-primary mt-2" @click="router.push('/routines/new')">
-          <i class="bi bi-plus me-1"></i> Create your first routine
+          <i class="bi bi-plus me-1" aria-hidden="true"></i> Create your first routine
         </button>
       </div>
 
       <!-- LISTA DE RUTINAS -->
-      <div v-else class="d-flex flex-column gap-3">
-        <div
+      <div v-else class="d-flex flex-column gap-3" role="list">
+        <article
           v-for="(routine, index) in filteredRoutines"
           :key="routine.id"
           class="routine-card fade-up"
           :class="parseInt(routine.done_today) == 2 ? 'card-done' : parseInt(routine.done_today) == 1 ? 'card-tried' : 'card-pending'"
           :style="{ animationDelay: (index * 0.05) + 's' }"
+          role="listitem"
         >
+
           <!-- CABECERA -->
           <div class="rcard-header">
 
-            <!-- IZQUIERDA: icono + título + badges + descripción + progreso -->
+            <!-- IZQUIERDA -->
             <div class="flex-grow-1" style="min-width: 0">
               <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
-                <!-- icono según frecuencia -->
+                <!-- icono del usuario si tiene, si no el de frecuencia -->
+                <span v-if="routine.icon" class="rcard-user-icon" aria-hidden="true">{{ routine.icon }}</span>
                 <i
+                  v-else
                   class="bi rcard-freq-icon"
                   :class="routine.frecuency === 'daily' ? 'bi-sun' : routine.frecuency === 'weekly' ? 'bi-calendar-week' : 'bi-calendar-month'"
+                  aria-hidden="true"
                 ></i>
                 <span class="rcard-title">{{ routine.title }}</span>
                 <span class="bdg" :class="routine.frecuency === 'daily' ? 'bdg-daily' : routine.frecuency === 'weekly' ? 'bdg-weekly' : 'bdg-monthly'">
@@ -281,33 +261,36 @@ onMounted(function() { fetchRoutines() })
                   {{ getStatusLabel(routine.done_today) }}
                 </span>
                 <span v-if="routine.hour" class="bdg bdg-info">
-                  <i class="bi bi-clock"></i> {{ routine.hour }}
+                  <i class="bi bi-clock me-1" aria-hidden="true"></i>{{ routine.hour }}
                 </span>
               </div>
 
-              <!-- descripción -->
               <p v-if="routine.descrip" class="rcard-descrip">{{ routine.descrip }}</p>
 
-              <!-- BARRA DE PROGRESO -->
+              <!-- DÍAS si es semanal -->
+              <p v-if="routine.frecuency === 'weekly' && routine.days && routine.days.length" class="rcard-days-text">
+                <i class="bi bi-calendar-week me-1" aria-hidden="true"></i>{{ routine.days.join(', ') }}
+              </p>
+
+              <!-- PROGRESO -->
               <div class="d-flex align-items-center gap-2 mt-2">
-                <div class="progress flex-grow-1" style="height: 6px; background-color: var(--vanilla-light)">
+                <div class="rcard-progress-bar" role="progressbar" :aria-valuenow="calculatePercentage(routine)" aria-valuemin="0" aria-valuemax="100" :aria-label="calculatePercentage(routine) + '% complete'">
                   <div
-                    class="progress-bar"
-                    :style="{
-                      width: calculatePercentage(routine) + '%',
-                      backgroundColor: parseInt(routine.done_today) == 2 ? 'var(--state-ok)' : parseInt(routine.done_today) == 1 ? 'var(--state-warn)' : 'var(--vanilla-mid)'
+                    class="rcard-progress-fill"
+                    :style="{ width: calculatePercentage(routine) + '%',
+                      background: calculatePercentage(routine) === 100 ? 'var(--state-ok)' : calculatePercentage(routine) >= 50 ? 'var(--state-warn)' : 'var(--cinnamon-mid)'
                     }"
                   ></div>
                 </div>
                 <small class="rcard-progress-text">
-                  {{ routine.done_steps || 0 }}/{{ routine.total_steps || 0 }} done
+                  {{ routine.done_steps || 0 }}/{{ routine.total_steps || 0 }}
                 </small>
               </div>
             </div>
 
             <!-- DERECHA: racha -->
-            <div class="rcard-streak">
-              <i class="bi bi-fire rcard-streak-icon"></i>
+            <div class="rcard-streak" aria-label="Streak: {{ routine.streak || 0 }} days">
+              <i class="bi bi-fire rcard-streak-icon" aria-hidden="true"></i>
               <div class="rcard-streak-num">{{ routine.streak || 0 }}</div>
               <div class="rcard-streak-label">day streak</div>
             </div>
@@ -316,63 +299,57 @@ onMounted(function() { fetchRoutines() })
           <!-- FILA INFERIOR: botones -->
           <div class="rcard-footer">
             <button
-              class="btn-dopamine btn-dopamine-danger btn-sm rcard-btn"
-              @click="deleteRoutine(routine.id)"
+              class="btn-dopamine btn-dopamine-ghost rcard-btn"
+              :aria-label="'Edit routine: ' + routine.title"
+              @click="router.push('/routines/edit/' + routine.id)"
             >
-              <i class="bi bi-trash"></i>
+              <i class="bi bi-pencil" aria-hidden="true"></i>
             </button>
             <button
-              class="btn-dopamine btn-dopamine-ghost btn-sm rcard-btn"
+              class="btn-dopamine btn-dopamine-danger rcard-btn"
+              :aria-label="'Delete routine: ' + routine.title"
+              @click="deleteRoutine(routine.id)"
+            >
+              <i class="bi bi-trash" aria-hidden="true"></i>
+            </button>
+            <button
+              class="btn-dopamine btn-dopamine-ghost rcard-btn"
+              :aria-label="(expandedRoutines[routine.id] ? 'Collapse' : 'Expand') + ' routine: ' + routine.title"
+              :aria-expanded="!!expandedRoutines[routine.id]"
+              :aria-controls="'rcard-body-' + routine.id"
               @click="toggleExpand(routine.id)"
             >
-              <i class="bi" :class="expandedRoutines[routine.id] ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+              <i class="bi" :class="expandedRoutines[routine.id] ? 'bi-chevron-up' : 'bi-chevron-down'" aria-hidden="true"></i>
             </button>
           </div>
 
           <!-- CUERPO EXPANDIDO -->
-          <div v-if="expandedRoutines[routine.id]" class="rcard-body">
-
-            <!-- HÁBITOS -->
-            <div v-if="routine.habits && routine.habits.length > 0" class="mb-3">
-              <p class="items-label"><i class="bi bi-arrow-repeat me-1"></i>HABITS</p>
-              <div class="d-flex flex-column gap-2">
-                <div
-                  v-for="habit in routine.habits"
-                  :key="habit.id"
-                  class="inner-item habit-item"
-                  :class="parseInt(habit.done_today) == 2 ? 'item-done' : ''"
-                >
-                  <button
-                    class="inner-state-btn"
-                    :class="'state-' + parseInt(habit.done_today || 0)"
-                    @click="cycleHabitInRoutine(routine, habit)"
-                  >
-                    <i class="bi" :class="getHabitIcon(habit.done_today)"></i>
-                  </button>
-                  <span class="inner-text" :class="parseInt(habit.done_today) == 2 ? 'text-decoration-line-through' : ''">
-                    {{ habit.title }}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <!-- PASOS -->
+          <div
+            v-if="expandedRoutines[routine.id]"
+            :id="'rcard-body-' + routine.id"
+            class="rcard-body"
+          >
             <div v-if="routine.checklist && routine.checklist.length > 0">
-              <p class="items-label"><i class="bi bi-list-check me-1"></i>STEPS</p>
-              <div class="d-flex flex-column gap-2">
+              <p class="items-label">
+                <i class="bi bi-list-check me-1" aria-hidden="true"></i>STEPS
+              </p>
+              <div class="d-flex flex-column gap-2" role="list" :aria-label="routine.title + ' steps'">
                 <div
                   v-for="step in routine.checklist"
                   :key="step.id"
                   class="inner-item step-item"
                   :class="step.done ? 'item-done' : ''"
+                  role="listitem"
                 >
-                  <div
+                  <button
                     class="inner-check"
                     :class="step.done ? 'checked' : ''"
+                    :aria-label="(step.done ? 'Uncheck' : 'Check') + ' step: ' + step.title"
+                    :aria-pressed="!!step.done"
                     @click="toggleRoutineStep(routine, step)"
                   >
-                    <i v-if="step.done" class="bi bi-check"></i>
-                  </div>
+                    <i v-if="step.done" class="bi bi-check" aria-hidden="true"></i>
+                  </button>
                   <span class="inner-text" :class="step.done ? 'text-decoration-line-through' : ''">
                     {{ step.title }}
                   </span>
@@ -380,31 +357,36 @@ onMounted(function() { fetchRoutines() })
               </div>
             </div>
 
-            <p
-              v-if="(!routine.habits || routine.habits.length == 0) && (!routine.checklist || routine.checklist.length == 0)"
-              class="no-items-text"
-            >
-              <i class="bi bi-info-circle me-1"></i> No habits or steps added yet
+            <p v-else class="no-items-text">
+              <i class="bi bi-info-circle me-1" aria-hidden="true"></i>
+              No steps added yet.
+              <button class="btn-link-style ms-1" @click="router.push('/routines/edit/' + routine.id)">
+                Edit to add steps
+              </button>
             </p>
-
           </div>
-        </div>
+
+        </article>
       </div>
     </template>
 
     <!-- FAB -->
-    <button class="fab" @click="router.push('/routines/new')" title="New routine">
-      <i class="bi bi-plus"></i>
+    <button
+      class="fab"
+      aria-label="Create new routine"
+      @click="router.push('/routines/new')"
+    >
+      <i class="bi bi-plus" aria-hidden="true"></i>
     </button>
 
   </div>
 </template>
 
 <style scoped>
-/* CONTENEDOR MÁS ANCHO */
 .routines-container {
   width: 100%;
   padding: 2.5rem 3rem 5rem;
+  font-family: 'Atkinson Hyperlegible', sans-serif;
 }
 
 @media (max-width: 768px) {
@@ -425,7 +407,7 @@ onMounted(function() { fetchRoutines() })
 .routine-card:hover { box-shadow: 0 4px 18px rgba(92, 51, 23, 0.12); }
 
 .card-done    { border-left-color: var(--state-ok);   background: var(--state-ok-bg); }
-.card-tried   { border-left-color: var(--state-warn);  }
+.card-tried   { border-left-color: var(--state-warn); }
 .card-pending { border-left-color: var(--cinnamon-mid); }
 
 /* CABECERA */
@@ -436,6 +418,11 @@ onMounted(function() { fetchRoutines() })
   gap: 1.5rem;
 }
 
+.rcard-user-icon {
+  font-size: 1.3rem;
+  flex-shrink: 0;
+}
+
 .rcard-freq-icon {
   font-size: 1.1rem;
   color: var(--cinnamon-soft);
@@ -444,20 +431,49 @@ onMounted(function() { fetchRoutines() })
 }
 
 .rcard-title {
-  font-family: var(--font-serif);
+  font-family: 'Atkinson Hyperlegible', sans-serif;
   font-size: 1.05rem;
-  font-weight: 700;
+  font-weight: 800;
   color: var(--cinnamon-dark);
 }
 
 .rcard-descrip {
-  font-size: 0.78rem;
+  font-family: 'Atkinson Hyperlegible', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 500;
   color: var(--cinnamon-soft);
   margin: 0.2rem 0 0;
 }
 
+.rcard-days-text {
+  font-family: 'Atkinson Hyperlegible', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #2A5068;
+  margin: 0.2rem 0 0;
+  display: flex;
+  align-items: center;
+}
+
+/* BARRA DE PROGRESO */
+.rcard-progress-bar {
+  flex-grow: 1;
+  height: 6px;
+  background: var(--vanilla-light);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.rcard-progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
 .rcard-progress-text {
-  font-size: 0.68rem;
+  font-family: 'Atkinson Hyperlegible', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
   color: var(--cinnamon-soft);
   white-space: nowrap;
 }
@@ -476,7 +492,7 @@ onMounted(function() { fetchRoutines() })
 }
 
 .rcard-streak-num {
-  font-family: var(--font-serif);
+  font-family: 'Atkinson Hyperlegible', sans-serif;
   font-size: 1.8rem;
   font-weight: 700;
   color: var(--state-warn);
@@ -506,7 +522,12 @@ onMounted(function() { fetchRoutines() })
   align-items: center;
   justify-content: center;
   font-size: 1rem;
-  border-radius: 6px;
+  border-radius: 8px;
+}
+
+.rcard-btn:focus-visible {
+  outline: 3px solid var(--cinnamon-mid);
+  outline-offset: 3px;
 }
 
 /* CUERPO EXPANDIDO */
@@ -517,11 +538,15 @@ onMounted(function() { fetchRoutines() })
 }
 
 .items-label {
-  font-size: 0.65rem;
+  font-family: 'Atkinson Hyperlegible', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
   color: var(--cinnamon-soft);
   text-transform: uppercase;
   letter-spacing: 1.5px;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.6rem;
+  display: flex;
+  align-items: center;
 }
 
 /* ITEMS */
@@ -529,51 +554,64 @@ onMounted(function() { fetchRoutines() })
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.5rem 0.85rem;
+  padding: 0.6rem 0.85rem;
   border-radius: 8px;
   border: 1px solid var(--vanilla-light);
   background: var(--bg-base);
 }
 
-.habit-item { border-left: 3px solid var(--cinnamon-mid); }
-.step-item  { border-left: 3px solid var(--vanilla-mid); }
+.step-item { border-left: 3px solid var(--vanilla-mid); }
 
 .inner-item.item-done { background: var(--state-ok-bg); border-color: #C8E4CA; }
-.inner-item.item-done.habit-item,
 .inner-item.item-done.step-item { border-left-color: var(--state-ok); }
 
 .inner-text {
-  font-size: 0.82rem;
+  font-family: 'Atkinson Hyperlegible', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 600;
   color: var(--cinnamon-dark);
   flex-grow: 1;
 }
 
-.inner-state-btn {
-  width: 24px; height: 24px;
-  border-radius: 50%;
-  border: 1.5px solid var(--vanilla-mid);
-  background: transparent;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; transition: all 0.15s;
-  font-size: 0.82rem; flex-shrink: 0;
-}
-
-.inner-state-btn.state-0 { color: var(--vanilla-mid); }
-.inner-state-btn.state-1 { color: var(--state-warn); border-color: var(--state-warn); background: var(--state-warn-bg); }
-.inner-state-btn.state-2 { color: var(--state-ok);   border-color: var(--state-ok);   background: var(--state-ok-bg); }
-
+/* CHECKBOX como botón accesible */
 .inner-check {
-  width: 20px; height: 20px;
+  width: 24px;
+  height: 24px;
   border-radius: 4px;
-  border: 1.5px solid var(--vanilla-mid);
+  border: 2px solid var(--vanilla-mid);
   background: transparent;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; transition: all 0.15s;
-  font-size: 0.65rem; flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-size: 0.75rem;
+  flex-shrink: 0;
 }
 
-.inner-check:hover  { border-color: var(--cinnamon-mid); }
-.inner-check.checked { background: var(--state-ok); border-color: var(--state-ok); color: #fff; }
+.inner-check:hover       { border-color: var(--cinnamon-mid); }
+.inner-check:focus-visible { outline: 3px solid var(--cinnamon-mid); outline-offset: 2px; }
+.inner-check.checked     { background: var(--state-ok); border-color: var(--state-ok); color: #fff; }
 
-.no-items-text { font-size: 0.78rem; color: var(--cinnamon-soft); margin: 0; }
+.no-items-text {
+  font-family: 'Atkinson Hyperlegible', sans-serif;
+  font-size: 0.85rem;
+  color: var(--cinnamon-soft);
+  margin: 0;
+}
+
+.btn-link-style {
+  background: none;
+  border: none;
+  color: var(--cinnamon-dark);
+  font-family: 'Atkinson Hyperlegible', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.btn-link-style:hover { color: var(--cinnamon-mid); }
 </style>

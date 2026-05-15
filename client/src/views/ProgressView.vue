@@ -212,34 +212,36 @@ onMounted(function() {
         <em>track your</em>
         Progress
       </h1>
-      <span class="month-label">
-        <i class="bi bi-calendar3 me-2"></i>
+      <span class="month-label" aria-label="Current month">
+        <i class="bi bi-calendar3 me-2" aria-hidden="true"></i>
         {{ new Date().toLocaleString('en-GB', { month: 'long', year: 'numeric' }) }}
       </span>
     </div>
 
     <!-- ERROR -->
-    <div v-if="errorMessage" class="error-text mb-3">
-      <i class="bi bi-exclamation-triangle me-2"></i>{{ errorMessage }}
+    <div v-if="errorMessage" class="error-text mb-3" role="alert">
+      <i class="bi bi-exclamation-triangle me-2" aria-hidden="true"></i>{{ errorMessage }}
     </div>
 
     <!-- LOADING -->
-    <div v-if="loading" class="loading-text">
-      <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+    <div v-if="loading" class="loading-text" aria-live="polite">
+      <div class="spinner-border spinner-border-sm me-2" role="status">
+        <span class="visually-hidden">Loading progress data...</span>
+      </div>
       Loading your progress...
     </div>
 
     <template v-else-if="statsData">
 
       <!-- STATS STRIP -->
-      <div class="row g-3 mb-5 fade-up delay-1">
+      <div class="row g-3 mb-5 fade-up delay-1" aria-label="Monthly summary">
         <div class="col-6 col-md-3">
           <div class="stat-strip strip-ok">
             <div>
               <div class="stat-num">{{ statsData.summary?.habits_done ?? 0 }}</div>
               <div class="stat-label">Habits done</div>
             </div>
-            <i class="bi bi-arrow-repeat stat-icon ms-3"></i>
+            <i class="bi bi-arrow-repeat stat-icon ms-3" aria-hidden="true"></i>
           </div>
         </div>
         <div class="col-6 col-md-3">
@@ -248,7 +250,7 @@ onMounted(function() {
               <div class="stat-num">{{ statsData.summary?.tasks_done ?? 0 }}</div>
               <div class="stat-label">Tasks done</div>
             </div>
-            <i class="bi bi-check2-square stat-icon ms-3"></i>
+            <i class="bi bi-check2-square stat-icon ms-3" aria-hidden="true"></i>
           </div>
         </div>
         <div class="col-6 col-md-3">
@@ -257,7 +259,7 @@ onMounted(function() {
               <div class="stat-num">{{ statsData.summary?.best_streak ?? 0 }}</div>
               <div class="stat-label">Best streak</div>
             </div>
-            <i class="bi bi-fire stat-icon ms-3"></i>
+            <i class="bi bi-fire stat-icon ms-3" aria-hidden="true"></i>
           </div>
         </div>
         <div class="col-6 col-md-3">
@@ -266,7 +268,7 @@ onMounted(function() {
               <div class="stat-num">{{ statsData.summary?.routines_done ?? 0 }}</div>
               <div class="stat-label">Routines done</div>
             </div>
-            <i class="bi bi-list-check stat-icon ms-3"></i>
+            <i class="bi bi-list-check stat-icon ms-3" aria-hidden="true"></i>
           </div>
         </div>
       </div>
@@ -275,12 +277,16 @@ onMounted(function() {
       <div class="chart-card mb-4 fade-up delay-2">
         <div class="chart-card-header">
           <h2 class="chart-title">
-            <i class="bi bi-arrow-repeat me-2"></i>Habits this month
+            <i class="bi bi-arrow-repeat me-2" aria-hidden="true"></i>Habits this month
           </h2>
           <p class="chart-sub">Daily completion by day</p>
         </div>
         <div class="chart-wrapper">
-          <canvas ref="habitsChartRef"></canvas>
+          <canvas
+            ref="habitsChartRef"
+            role="img"
+            aria-label="Bar chart showing daily habit completion this month: done, tried and pending per day"
+          ></canvas>
         </div>
       </div>
 
@@ -292,12 +298,16 @@ onMounted(function() {
           <div class="chart-card h-100">
             <div class="chart-card-header">
               <h2 class="chart-title">
-                <i class="bi bi-check2-square me-2"></i>Tasks this month
+                <i class="bi bi-check2-square me-2" aria-hidden="true"></i>Tasks this month
               </h2>
               <p class="chart-sub">Completion breakdown</p>
             </div>
             <div class="chart-wrapper-sm">
-              <canvas ref="tasksChartRef"></canvas>
+              <canvas
+                ref="tasksChartRef"
+                role="img"
+                aria-label="Doughnut chart showing tasks done on time, done late and pending this month"
+              ></canvas>
             </div>
           </div>
         </div>
@@ -307,55 +317,63 @@ onMounted(function() {
           <div class="chart-card h-100">
             <div class="chart-card-header">
               <h2 class="chart-title">
-                <i class="bi bi-list-check me-2"></i>Routines this month
+                <i class="bi bi-list-check me-2" aria-hidden="true"></i>Routines this month
               </h2>
               <p class="chart-sub">Weekly completion percentage</p>
             </div>
             <div class="chart-wrapper">
-              <canvas ref="routinesChartRef"></canvas>
+              <canvas
+                ref="routinesChartRef"
+                role="img"
+                aria-label="Line chart showing routine completion percentage by week this month"
+              ></canvas>
             </div>
           </div>
         </div>
       </div>
 
       <!-- TABLA DE RACHAS -->
-      <div class="chart-card fade-up delay-5" v-if="statsData.streaks && statsData.streaks.length > 0">
+      <div
+        class="chart-card fade-up delay-5"
+        v-if="statsData.streaks && statsData.streaks.length > 0"
+      >
         <div class="chart-card-header">
           <h2 class="chart-title">
-            <i class="bi bi-fire me-2"></i>Top streaks
+            <i class="bi bi-fire me-2" aria-hidden="true"></i>Top streaks
           </h2>
           <p class="chart-sub">Your best habits by streak</p>
         </div>
 
-        <div class="streaks-list">
-          <div
+        <ol class="streaks-list" aria-label="Top habits by streak">
+          <li
             v-for="(item, index) in statsData.streaks"
             :key="item.id"
             class="streak-row"
             :class="index === 0 ? 'streak-first' : ''"
+            :aria-label="item.title + ': current streak ' + item.current_streak + ', best streak ' + item.best_streak"
           >
-            <span class="streak-position">{{ index + 1 }}</span>
+            <span class="streak-position" aria-hidden="true">{{ index + 1 }}</span>
             <span class="streak-name flex-grow-1">{{ item.title }}</span>
             <div class="d-flex gap-3 align-items-center">
               <div class="streak-stat">
-                <div class="streak-stat-num">{{ item.current_streak }}</div>
-                <div class="streak-stat-label">current</div>
+                <div class="streak-stat-num" aria-hidden="true">{{ item.current_streak }}</div>
+                <div class="streak-stat-label" aria-hidden="true">current</div>
               </div>
-              <div class="streak-divider"></div>
+              <div class="streak-divider" aria-hidden="true"></div>
               <div class="streak-stat">
-                <div class="streak-stat-num text-warn">{{ item.best_streak }}</div>
-                <div class="streak-stat-label">best</div>
+                <div class="streak-stat-num text-warn" aria-hidden="true">{{ item.best_streak }}</div>
+                <div class="streak-stat-label" aria-hidden="true">best</div>
               </div>
             </div>
-          </div>
-        </div>
+          </li>
+        </ol>
       </div>
 
     </template>
 
     <!-- Sin datos -->
     <div v-else class="empty-state fade-up">
-      <i class="bi bi-bar-chart empty-icon"></i>
+      <i class="bi bi-bar-chart empty-icon" aria-hidden="true"></i>
       <p class="empty-title">No data yet</p>
       <p class="empty-sub">Complete some habits or tasks to see your progress here</p>
     </div>
@@ -392,9 +410,7 @@ onMounted(function() {
   box-shadow: 0 2px 12px rgba(92, 51, 23, 0.07);
 }
 
-.chart-card-header {
-  margin-bottom: 1.2rem;
-}
+.chart-card-header { margin-bottom: 1.2rem; }
 
 .chart-title {
   font-family: 'Atkinson Hyperlegible', sans-serif;
@@ -411,22 +427,17 @@ onMounted(function() {
   margin: 0;
 }
 
-/* Contenedor de los graficos */
-.chart-wrapper {
-  position: relative;
-  height: 260px;
-}
+.chart-wrapper    { position: relative; height: 260px; }
+.chart-wrapper-sm { position: relative; height: 240px; }
 
-.chart-wrapper-sm {
-  position: relative;
-  height: 240px;
-}
-
-/* TABLA DE RACHAS */
+/* TABLA DE RACHAS — cambiado de div a ol/li */
 .streaks-list {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
 
 .streak-row {
@@ -440,9 +451,7 @@ onMounted(function() {
   transition: background 0.15s;
 }
 
-.streak-row:hover {
-  background: var(--bg-subtle);
-}
+.streak-row:hover { background: var(--bg-subtle); }
 
 .streak-row.streak-first {
   background: var(--state-warn-bg);
@@ -459,14 +468,12 @@ onMounted(function() {
   flex-shrink: 0;
 }
 
-.streak-row.streak-first .streak-position {
-  color: var(--state-warn);
-}
+.streak-row.streak-first .streak-position { color: var(--state-warn); }
 
 .streak-name {
   font-family: 'Atkinson Hyperlegible', sans-serif;
   font-size: 0.95rem;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--cinnamon-dark);
 }
 
@@ -483,9 +490,7 @@ onMounted(function() {
   line-height: 1;
 }
 
-.streak-stat-num.text-warn {
-  color: var(--state-warn);
-}
+.streak-stat-num.text-warn { color: var(--state-warn); }
 
 .streak-stat-label {
   font-size: 0.6rem;
@@ -502,9 +507,6 @@ onMounted(function() {
 }
 
 @media (max-width: 576px) {
-  .streak-row {
-    flex-wrap: wrap;
-    gap: 0.5rem;
-  }
+  .streak-row { flex-wrap: wrap; gap: 0.5rem; }
 }
 </style>

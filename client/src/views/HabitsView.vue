@@ -140,33 +140,39 @@ onMounted(() => {
         <em>build your</em>
         Habits
       </h1>
-      <button class="btn-dopamine btn-dopamine-primary" @click="router.push('/habits/new')">
-        <i class="bi bi-plus me-1"></i> New Habit
+      <button
+        class="btn-dopamine btn-dopamine-primary"
+        aria-label="Create new habit"
+        @click="router.push('/habits/new')"
+      >
+        <i class="bi bi-plus me-1" aria-hidden="true"></i> New Habit
       </button>
     </div>
 
     <!-- ERROR -->
-    <div v-if="error" class="error-text mb-3">
-      <i class="bi bi-exclamation-triangle me-2"></i>{{ error }}
+    <div v-if="error" class="error-text mb-3" role="alert">
+      <i class="bi bi-exclamation-triangle me-2" aria-hidden="true"></i>{{ error }}
     </div>
 
     <!-- LOADING -->
-    <div v-if="loading" class="loading-text">
-      <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+    <div v-if="loading" class="loading-text" aria-live="polite">
+      <div class="spinner-border spinner-border-sm me-2" role="status">
+        <span class="visually-hidden">Loading habits...</span>
+      </div>
       Loading...
     </div>
 
     <template v-else>
 
       <!-- STATS STRIP -->
-      <div class="row g-3 mb-4 fade-up delay-1">
+      <div class="row g-3 mb-4 fade-up delay-1" aria-label="Habit statistics">
         <div class="col-6 col-md-3">
           <div class="stat-strip strip-neutral">
             <div>
               <div class="stat-num">{{ habits.length }}</div>
               <div class="stat-label">Total habits</div>
             </div>
-            <i class="bi bi-arrow-repeat stat-icon ms-3"></i>
+            <i class="bi bi-arrow-repeat stat-icon ms-3" aria-hidden="true"></i>
           </div>
         </div>
         <div class="col-6 col-md-3">
@@ -175,7 +181,7 @@ onMounted(() => {
               <div class="stat-num">{{ habits.filter(h => h.done_today == 2).length }}</div>
               <div class="stat-label">Done today</div>
             </div>
-            <i class="bi bi-check-circle stat-icon ms-3"></i>
+            <i class="bi bi-check-circle stat-icon ms-3" aria-hidden="true"></i>
           </div>
         </div>
         <div class="col-6 col-md-3">
@@ -184,7 +190,7 @@ onMounted(() => {
               <div class="stat-num">{{ habits.filter(h => h.done_today == 1).length }}</div>
               <div class="stat-label">Tried today</div>
             </div>
-            <i class="bi bi-dash-circle stat-icon ms-3"></i>
+            <i class="bi bi-dash-circle stat-icon ms-3" aria-hidden="true"></i>
           </div>
         </div>
         <div class="col-6 col-md-3">
@@ -193,13 +199,13 @@ onMounted(() => {
               <div class="stat-num">{{ Math.max(...habits.map(h => h.streak || 0), 0) }}</div>
               <div class="stat-label">Best streak</div>
             </div>
-            <i class="bi bi-fire stat-icon ms-3"></i>
+            <i class="bi bi-fire stat-icon ms-3" aria-hidden="true"></i>
           </div>
         </div>
       </div>
 
       <!-- FILTROS -->
-      <div class="d-flex flex-wrap gap-2 mb-4 fade-up delay-2">
+      <div class="d-flex flex-wrap gap-2 mb-4 fade-up delay-2" role="group" aria-label="Filter habits">
         <button class="filter-tab" :class="filter === 'all'     ? 'active' : ''" @click="filter = 'all'">All ({{ habits.length }})</button>
         <button class="filter-tab" :class="filter === 'daily'   ? 'active' : ''" @click="filter = 'daily'">Daily</button>
         <button class="filter-tab" :class="filter === 'weekly'  ? 'active' : ''" @click="filter = 'weekly'">Weekly</button>
@@ -209,21 +215,22 @@ onMounted(() => {
 
       <!-- LISTA VACÍA -->
       <div v-if="filteredHabits.length == 0" class="empty-state fade-up">
-        <i class="bi bi-arrow-repeat empty-icon"></i>
+        <i class="bi bi-arrow-repeat empty-icon" aria-hidden="true"></i>
         <p class="empty-title">No habits found</p>
         <button class="btn-dopamine btn-dopamine-primary mt-2" @click="router.push('/habits/new')">
-          <i class="bi bi-plus me-1"></i> Create your first habit
+          <i class="bi bi-plus me-1" aria-hidden="true"></i> Create your first habit
         </button>
       </div>
 
       <!-- LISTA DE HÁBITOS -->
-      <div v-else class="d-flex flex-column gap-3">
-        <div
+      <div v-else class="d-flex flex-column gap-3" role="list">
+        <article
           v-for="(habit, index) in filteredHabits"
           :key="habit.id"
           class="habit-card fade-up"
           :class="habit.done_today == 2 ? 'card-done' : habit.done_today == 1 ? 'card-tried' : habit.frecuency === 'weekly' ? 'freq-weekly' : habit.frecuency === 'monthly' ? 'freq-monthly' : 'freq-daily'"
           :style="{ animationDelay: (index * 0.04) + 's' }"
+          role="listitem"
         >
           <div class="habit-card-body">
 
@@ -235,12 +242,14 @@ onMounted(() => {
                 class="habit-state-btn"
                 :class="habit.done_today == 2 ? 'state-done' : habit.done_today == 1 ? 'state-tried' : 'state-pending'"
                 :disabled="!isTodayScheduled(habit)"
-                :title="isTodayScheduled(habit) ? 'Click to change state' : 'Not scheduled for today'"
+                :aria-label="'Mark ' + habit.title + ' as ' + (habit.done_today == 2 ? 'pending' : habit.done_today == 1 ? 'done' : 'tried')"
+                :aria-pressed="habit.done_today != 0"
                 @click="cycleState(habit)"
               >
                 <i
                   class="bi"
                   :class="habit.done_today == 2 ? 'bi-check-circle-fill' : habit.done_today == 1 ? 'bi-dash-circle' : 'bi-circle'"
+                  aria-hidden="true"
                 ></i>
               </button>
 
@@ -257,19 +266,19 @@ onMounted(() => {
                     {{ doneLabel(habit.done_today) }}
                   </span>
                   <span v-if="isTodayScheduled(habit) == false" class="bdg bdg-info">
-                    <i class="bi bi-calendar-x me-1"></i>Not today
+                    <i class="bi bi-calendar-x me-1" aria-hidden="true"></i>Not today
                   </span>
                 </div>
 
                 <!-- DÍAS si es semanal — en azul -->
                 <div v-if="habit.days && habit.days.length" class="habit-meta habit-meta-weekly">
-                  <i class="bi bi-calendar-week me-1"></i>
+                  <i class="bi bi-calendar-week me-1" aria-hidden="true"></i>
                   {{ habit.days.join(", ") }}
                 </div>
 
                 <!-- DÍA DEL MES si es mensual — en dorado -->
                 <div v-if="habit.frecuency === 'monthly'" class="habit-meta habit-meta-monthly">
-                  <i class="bi bi-calendar-event me-1"></i>
+                  <i class="bi bi-calendar-event me-1" aria-hidden="true"></i>
                   Day {{ habit.dayOfMonth }} of each month
                 </div>
               </div>
@@ -277,28 +286,28 @@ onMounted(() => {
 
             <!-- DERECHA: racha + borrar -->
             <div class="d-flex align-items-center gap-3 flex-shrink-0">
-              <div class="habit-streak text-center">
+              <div class="habit-streak text-center" :aria-label="'Streak: ' + (habit.streak || 0) + ' days'">
                 <div class="habit-streak-num">{{ habit.streak || 0 }}</div>
                 <div class="habit-streak-label">streak</div>
               </div>
               <button
                 class="btn-dopamine btn-dopamine-danger habit-delete-btn"
+                :aria-label="'Delete habit: ' + habit.title"
                 @click="deleteHabit(habit.id)"
-                title="Delete habit"
               >
-                <i class="bi bi-trash"></i>
+                <i class="bi bi-trash" aria-hidden="true"></i>
               </button>
             </div>
 
           </div>
-        </div>
+        </article>
       </div>
 
     </template>
 
     <!-- FAB -->
-    <button class="fab" @click="router.push('/habits/new')" title="New habit">
-      <i class="bi bi-plus"></i>
+    <button class="fab" aria-label="Create new habit" @click="router.push('/habits/new')">
+      <i class="bi bi-plus" aria-hidden="true"></i>
     </button>
 
   </div>
@@ -343,7 +352,7 @@ onMounted(() => {
 .habit-title {
   font-family: 'Atkinson Hyperlegible', sans-serif;
   font-size: 1rem;
-  font-weight: 700;
+  font-weight: 800;
   color: var(--cinnamon-dark);
 }
 
@@ -360,14 +369,10 @@ onMounted(() => {
 }
 
 /* Color azul para semanal */
-.habit-meta-weekly {
-  color: #2A5068;
-}
+.habit-meta-weekly { color: #2A5068; }
 
 /* Color dorado para mensual */
-.habit-meta-monthly {
-  color: var(--vanilla-deep);
-}
+.habit-meta-monthly { color: var(--vanilla-deep); }
 
 /* Badges más grandes y visibles */
 :deep(.bdg),
@@ -402,6 +407,11 @@ onMounted(() => {
   cursor: not-allowed;
 }
 
+.habit-state-btn:focus-visible {
+  outline: 3px solid var(--cinnamon-mid);
+  outline-offset: 3px;
+}
+
 .state-pending { color: var(--vanilla-mid); }
 .state-tried   { color: var(--state-warn); border-color: var(--state-warn); background: var(--state-warn-bg); }
 .state-done    { color: var(--state-ok);   border-color: var(--state-ok);   background: var(--state-ok-bg); }
@@ -432,5 +442,10 @@ onMounted(() => {
   justify-content: center;
   font-size: 0.95rem;
   border-radius: 10px;
+}
+
+.habit-delete-btn:focus-visible {
+  outline: 3px solid var(--cinnamon-mid);
+  outline-offset: 3px;
 }
 </style>

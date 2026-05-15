@@ -1,14 +1,19 @@
 <script setup>
 // imports para Vue, router y API
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/userStore'
 import { rutaApi } from '@/config.js'
 
-const userStore = useUserStore()
-const router    = useRouter()
+const userStore  = useUserStore()
+const router     = useRouter()
+const route      = useRoute()
+const routineId  = route.params.id
 
-//variables reactivas
+const loading      = ref(true)
+const errorMessage = ref('')
+
+//variables reactivas del formulario
 const routineTitle      = ref('')
 const routineDescrip    = ref('')
 const routineIcon       = ref('')
@@ -17,14 +22,41 @@ const routineFrecuency  = ref('daily')
 const routineDayOfMonth = ref(null)
 const routineDays       = ref([])
 
-const errorMessage = ref('')
-const weekDaysList = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday']
-
-//variables para nuevos pasos
+//checklist existente
 const routineSteps  = ref([])
 const stepInputText = ref('')
 
-//funciones para manejar los arrays de seleccion
+const weekDaysList = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday']
+
+//funcion para cargar datos de la rutina
+function loadRoutineData() {
+  loading.value = true
+
+  fetch(rutaApi + "?entity=routines&id=" + routineId)
+    .then(res => res.json())
+    .then(data => {
+      if (!data || data.status === 'error') {
+        errorMessage.value = 'Routine not found'
+        loading.value = false
+        return
+      }
+
+      routineTitle.value      = data.title || ''
+      routineDescrip.value    = data.descrip || ''
+      routineIcon.value       = data.icon || ''
+      routineHour.value       = data.hour ? data.hour.slice(0, 5) : ''
+      routineFrecuency.value  = data.frecuency || 'daily'
+      routineDayOfMonth.value = data.dayOfMonth || null
+      routineDays.value       = data.days || []
+      routineSteps.value      = data.checklist || []
+      loading.value = false
+    })
+    .catch(err => {
+      errorMessage.value = 'Error loading routine'
+      loading.value = false
+    })
+}
+
 function toggleDaySelection(day) {
   let index = routineDays.value.indexOf(day)
   if (index == -1) {
@@ -34,23 +66,39 @@ function toggleDaySelection(day) {
   }
 }
 
-//funcion para añadir nuevos pasos
-async function addNewStep() {
+//añadir paso nuevo (se guarda en BD directamente)
+function addNewStep() {
   if (stepInputText.value.trim() == "") return
-  routineSteps.value.push({ title: stepInputText.value.trim() })
-  stepInputText.value = ''
+
+  fetch(rutaApi + "?entity=routine_checklist", {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ routine_id: routineId, title: stepInputText.value.trim() })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.status === 'success') {
+      routineSteps.value.push({ id: data.id, title: stepInputText.value.trim(), done: false })
+      stepInputText.value = ''
+    }
+  })
 }
 
-//funcion para borrar pasos
-function deleteStep(index) {
-  routineSteps.value.splice(index, 1)
+//borrar paso (se borra en BD directamente)
+function deleteStep(step, index) {
+  fetch(rutaApi + "?entity=routine_checklist&id=" + step.id, { method: 'DELETE' })
+    .then(res => res.json())
+    .then(data => {
+      if (data.status === 'success') {
+        routineSteps.value.splice(index, 1)
+      }
+    })
 }
 
-//funcion para guardar la rutina
-function saveRoutine() {
+//funcion para guardar los cambios de la rutina
+function updateRoutine() {
   errorMessage.value = ''
 
-  //validaciones basicas para rutinas
   if (routineTitle.value == '') {
     errorMessage.value = 'Title is required'
     return
@@ -60,15 +108,7 @@ function saveRoutine() {
     return
   }
 
-  //recorremos un array y guardamos los pasos
-  let finalSteps = []
-  for (let i = 0; i < routineSteps.value.length; i++) {
-    finalSteps.push(routineSteps.value[i].title)
-  }
-
-  //variable para guardar objeto para el backend
   let routineData = {
-    user_id:    userStore.user.id,
     title:      routineTitle.value,
     descrip:    routineDescrip.value,
     icon:       routineIcon.value || null,
@@ -76,30 +116,35 @@ function saveRoutine() {
     color:      '#6B8FA3',
     frecuency:  routineFrecuency.value,
     dayOfMonth: routineFrecuency.value == 'monthly' ? routineDayOfMonth.value : null,
-    days:       routineFrecuency.value == 'weekly' ? routineDays.value : [],
-    steps:      finalSteps
+    days:       routineFrecuency.value == 'weekly' ? routineDays.value : []
   }
 
-  //fetch post para guardar la nueva rutina
-  fetch(rutaApi + "?entity=routines", {
-    method: 'POST',
+  fetch(rutaApi + "?entity=routines&id=" + routineId, {
+    method:  'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(routineData)
+    body:    JSON.stringify(routineData)
   })
   .then(res => res.json())
   .then(data => {
     if (data.status === 'success') {
       router.push('/routines')
     } else {
-      errorMessage.value = 'Error creating routine'
+      errorMessage.value = 'Error updating routine'
     }
   })
+  .catch(err => {
+    errorMessage.value = 'Connection error'
+  })
 }
+
+onMounted(() => {
+  loadRoutineData()
+})
 </script>
 
 <template>
-  <div class="newroutine-wrapper">
-    <div class="newroutine-container">
+  <div class="editroutine-wrapper">
+    <div class="editroutine-container">
 
       <!-- PAN DE MIGA -->
       <nav class="breadcrumb-dopamine breadcrumb-visible mb-4 fade-up" aria-label="Breadcrumb navigation">
@@ -107,15 +152,23 @@ function saveRoutine() {
         <span class="separator" aria-hidden="true"><i class="bi bi-chevron-right"></i></span>
         <RouterLink to="/routines">Routines</RouterLink>
         <span class="separator" aria-hidden="true"><i class="bi bi-chevron-right"></i></span>
-        <span class="current" aria-current="page">New Routine</span>
+        <span class="current" aria-current="page">Edit Routine</span>
       </nav>
 
       <!-- CABECERA -->
       <div class="mb-4 fade-up delay-1">
         <h1 class="page-title">
-          <em>build a new</em>
+          <em>editing a</em>
           Routine
         </h1>
+      </div>
+
+      <!-- LOADING -->
+      <div v-if="loading" class="loading-text" aria-live="polite">
+        <div class="spinner-border spinner-border-sm me-2" role="status">
+          <span class="visually-hidden">Loading routine data...</span>
+        </div>
+        Loading routine...
       </div>
 
       <!-- ERROR -->
@@ -124,15 +177,15 @@ function saveRoutine() {
         <strong>{{ errorMessage }}</strong>
       </div>
 
-      <form @submit.prevent="saveRoutine" class="d-flex flex-column gap-4 fade-up delay-2" novalidate>
+      <form v-if="!loading" @submit.prevent="updateRoutine" class="d-flex flex-column gap-4 fade-up delay-2" novalidate>
 
         <!-- TÍTULO -->
         <div class="form-section">
-          <label for="routine-title" class="form-label-accessible">
+          <label for="edit-title" class="form-label-accessible">
             <i class="bi bi-pencil me-2" aria-hidden="true"></i>Title <span class="required-star" aria-hidden="true">*</span>
           </label>
           <input
-            id="routine-title"
+            id="edit-title"
             v-model="routineTitle"
             type="text"
             class="form-control dopamine-input input-lg"
@@ -143,11 +196,11 @@ function saveRoutine() {
 
         <!-- DESCRIPCIÓN -->
         <div class="form-section">
-          <label for="routine-descrip" class="form-label-accessible">
+          <label for="edit-descrip" class="form-label-accessible">
             <i class="bi bi-text-left me-2" aria-hidden="true"></i>Description
           </label>
           <input
-            id="routine-descrip"
+            id="edit-descrip"
             v-model="routineDescrip"
             type="text"
             class="form-control dopamine-input input-lg"
@@ -157,33 +210,33 @@ function saveRoutine() {
 
         <!-- ICONO -->
         <div class="form-section">
-          <label for="routine-icon" class="form-label-accessible">
+          <label for="edit-icon" class="form-label-accessible">
             <i class="bi bi-emoji-smile me-2" aria-hidden="true"></i>Icon
           </label>
           <input
-            id="routine-icon"
+            id="edit-icon"
             v-model="routineIcon"
             type="text"
             class="form-control dopamine-input input-lg icon-input"
             placeholder="e.g. 🌅"
             maxlength="4"
-            aria-describedby="icon-hint"
+            aria-describedby="edit-icon-hint"
           >
-          <p id="icon-hint" class="field-hint mt-2">
+          <p id="edit-icon-hint" class="field-hint mt-2">
             <i class="bi bi-keyboard me-1" aria-hidden="true"></i>
             <strong>Windows:</strong> press <kbd>Win + .</kbd> &nbsp;·&nbsp;
-            <strong>Mac:</strong> press <kbd>Cmd + Ctrl + Space</kbd> to open the emoji picker
+            <strong>Mac:</strong> press <kbd>Cmd + Ctrl + Space</kbd>
           </p>
         </div>
 
         <!-- HORA -->
         <div class="form-section">
-          <label for="routine-hour" class="form-label-accessible mb-2">
+          <label for="edit-hour" class="form-label-accessible mb-2">
             <i class="bi bi-clock me-2" aria-hidden="true"></i>Time
           </label>
           <p class="field-hint mb-2">When does this routine happen?</p>
           <input
-            id="routine-hour"
+            id="edit-hour"
             v-model="routineHour"
             type="time"
             class="form-control dopamine-input input-date"
@@ -201,45 +254,36 @@ function saveRoutine() {
               <div
                 class="freq-btn"
                 :class="routineFrecuency === 'daily' ? 'freq-btn-daily' : ''"
-                role="radio"
-                :aria-checked="routineFrecuency === 'daily'"
-                tabindex="0"
+                role="radio" :aria-checked="routineFrecuency === 'daily'" tabindex="0"
                 @click="routineFrecuency = 'daily'"
                 @keydown.enter="routineFrecuency = 'daily'"
                 @keydown.space.prevent="routineFrecuency = 'daily'"
               >
-                <i class="bi bi-sun d-block mb-1 freq-btn-icon" aria-hidden="true"></i>
-                Daily
+                <i class="bi bi-sun d-block mb-1 freq-btn-icon" aria-hidden="true"></i>Daily
               </div>
             </div>
             <div class="col-4">
               <div
                 class="freq-btn"
                 :class="routineFrecuency === 'weekly' ? 'freq-btn-weekly' : ''"
-                role="radio"
-                :aria-checked="routineFrecuency === 'weekly'"
-                tabindex="0"
+                role="radio" :aria-checked="routineFrecuency === 'weekly'" tabindex="0"
                 @click="routineFrecuency = 'weekly'"
                 @keydown.enter="routineFrecuency = 'weekly'"
                 @keydown.space.prevent="routineFrecuency = 'weekly'"
               >
-                <i class="bi bi-calendar-week d-block mb-1 freq-btn-icon" aria-hidden="true"></i>
-                Weekly
+                <i class="bi bi-calendar-week d-block mb-1 freq-btn-icon" aria-hidden="true"></i>Weekly
               </div>
             </div>
             <div class="col-4">
               <div
                 class="freq-btn"
                 :class="routineFrecuency === 'monthly' ? 'freq-btn-monthly' : ''"
-                role="radio"
-                :aria-checked="routineFrecuency === 'monthly'"
-                tabindex="0"
+                role="radio" :aria-checked="routineFrecuency === 'monthly'" tabindex="0"
                 @click="routineFrecuency = 'monthly'"
                 @keydown.enter="routineFrecuency = 'monthly'"
                 @keydown.space.prevent="routineFrecuency = 'monthly'"
               >
-                <i class="bi bi-calendar-month d-block mb-1 freq-btn-icon" aria-hidden="true"></i>
-                Monthly
+                <i class="bi bi-calendar-month d-block mb-1 freq-btn-icon" aria-hidden="true"></i>Monthly
               </div>
             </div>
           </div>
@@ -263,9 +307,7 @@ function saveRoutine() {
               :key="day"
               class="day-btn"
               :class="routineDays.includes(day) ? 'day-btn-selected' : ''"
-              role="checkbox"
-              :aria-checked="routineDays.includes(day)"
-              tabindex="0"
+              role="checkbox" :aria-checked="routineDays.includes(day)" tabindex="0"
               @click="toggleDaySelection(day)"
               @keydown.enter="toggleDaySelection(day)"
               @keydown.space.prevent="toggleDaySelection(day)"
@@ -281,21 +323,18 @@ function saveRoutine() {
 
         <!-- DÍA DEL MES si es mensual -->
         <div v-if="routineFrecuency == 'monthly'" class="form-section fade-up">
-          <label for="routine-dayofmonth" class="form-label-accessible mb-2">
+          <label for="edit-dayofmonth" class="form-label-accessible mb-2">
             <i class="bi bi-calendar-event me-2 text-monthly" aria-hidden="true"></i>
             <span class="text-monthly">Day of the month</span>
             <span class="required-star ms-1" aria-hidden="true">*</span>
           </label>
           <p class="field-hint mb-2">Between 1 and 31</p>
           <input
-            id="routine-dayofmonth"
+            id="edit-dayofmonth"
             v-model="routineDayOfMonth"
-            type="number"
-            min="1"
-            max="31"
+            type="number" min="1" max="31"
             class="form-control dopamine-input input-date"
-            placeholder="e.g. 15"
-            style="max-width: 140px"
+            placeholder="e.g. 15" style="max-width: 140px"
             aria-required="true"
           >
         </div>
@@ -307,13 +346,13 @@ function saveRoutine() {
           </label>
 
           <div class="d-flex gap-2 mb-3">
-            <label for="new-step" class="visually-hidden">Add a step</label>
+            <label for="edit-new-step" class="visually-hidden">Add a step</label>
             <input
-              id="new-step"
+              id="edit-new-step"
               v-model="stepInputText"
               type="text"
               class="form-control dopamine-input flex-grow-1 input-lg"
-              placeholder="e.g. Shower, Breakfast, Review the day..."
+              placeholder="Add a step..."
               @keydown.enter.prevent="addNewStep"
             >
             <button
@@ -327,14 +366,22 @@ function saveRoutine() {
           </div>
 
           <div v-if="routineSteps.length > 0" class="d-flex flex-column gap-2" role="list" aria-label="Routine steps">
-            <div v-for="(s, index) in routineSteps" :key="index" class="step-item" role="listitem">
+            <div
+              v-for="(step, index) in routineSteps"
+              :key="step.id || index"
+              class="step-item"
+              :class="step.done ? 'step-item-done' : ''"
+              role="listitem"
+            >
               <i class="bi bi-grip-vertical step-drag-icon" aria-hidden="true"></i>
-              <span class="flex-grow-1 step-item-text">{{ s.title }}</span>
+              <span class="flex-grow-1 step-item-text" :class="step.done ? 'text-decoration-line-through' : ''">
+                {{ step.title }}
+              </span>
               <button
                 type="button"
                 class="btn-dopamine btn-dopamine-danger step-remove-btn"
-                :aria-label="'Remove step: ' + s.title"
-                @click="deleteStep(index)"
+                :aria-label="'Remove step: ' + step.title"
+                @click="deleteStep(step, index)"
               >
                 <i class="bi bi-x" aria-hidden="true"></i>
               </button>
@@ -343,20 +390,14 @@ function saveRoutine() {
 
           <p v-else class="days-hint">
             <i class="bi bi-info-circle me-1" aria-hidden="true"></i>
-            No steps added yet.
+            No steps yet.
           </p>
-        </div>
-
-        <!-- RESUMEN -->
-        <div v-if="routineSteps.length > 0" class="routine-summary" aria-live="polite">
-          <i class="bi bi-check2-all me-2" aria-hidden="true"></i>
-          This routine will have <strong>{{ routineSteps.length }}</strong> step(s).
         </div>
 
         <!-- BOTONES -->
         <div class="d-flex gap-3 flex-wrap pb-2">
           <button type="submit" class="btn-dopamine btn-dopamine-primary form-action-btn">
-            <i class="bi bi-check2 me-2" aria-hidden="true"></i> Create Routine
+            <i class="bi bi-check2 me-2" aria-hidden="true"></i> Save Changes
           </button>
           <button
             type="button"
@@ -374,91 +415,37 @@ function saveRoutine() {
 </template>
 
 <style scoped>
-.newroutine-wrapper {
+.editroutine-wrapper {
   min-height: 100vh;
   background-color: var(--bg-subtle);
   padding: 2.5rem 1.5rem 5rem;
   font-family: 'Atkinson Hyperlegible', sans-serif;
 }
 
-.newroutine-container {
-  max-width: 720px;
-  margin: 0 auto;
-}
+.editroutine-container { max-width: 720px; margin: 0 auto; }
 
 @media (max-width: 768px) {
-  .newroutine-wrapper { padding: 1.5rem 1rem 4rem; }
+  .editroutine-wrapper { padding: 1.5rem 1rem 4rem; }
 }
 
-.form-section {
-  background: var(--bg-card);
-  border: 1.5px solid var(--vanilla-mid);
-  border-radius: 12px;
-  padding: 1.2rem 1.3rem;
-}
+.form-section { background: var(--bg-card); border: 1.5px solid var(--vanilla-mid); border-radius: 12px; padding: 1.2rem 1.3rem; }
 
-.breadcrumb-visible {
-  font-size: 1rem !important;
-  font-weight: 600 !important;
-  background: var(--bg-card);
-  border: 1.5px solid var(--vanilla-mid);
-  border-radius: 10px;
-  padding: 0.7rem 1rem !important;
-}
-
+.breadcrumb-visible { font-size: 1rem !important; font-weight: 600 !important; background: var(--bg-card); border: 1.5px solid var(--vanilla-mid); border-radius: 10px; padding: 0.7rem 1rem !important; }
 .breadcrumb-visible a        { color: var(--cinnamon-mid) !important; font-weight: 700 !important; font-size: 1rem !important; }
 .breadcrumb-visible .current { color: var(--cinnamon-dark) !important; font-weight: 700 !important; }
 .breadcrumb-visible .separator { color: var(--vanilla-mid) !important; }
 
-.form-label-accessible {
-  font-family: 'Atkinson Hyperlegible', sans-serif;
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--cinnamon-dark);
-  display: flex;
-  align-items: center;
-  margin-bottom: 0.5rem;
-}
-
+.form-label-accessible { font-family: 'Atkinson Hyperlegible', sans-serif; font-size: 1rem; font-weight: 700; color: var(--cinnamon-dark); display: flex; align-items: center; margin-bottom: 0.5rem; }
 .required-star { color: var(--state-error); font-weight: 700; }
 .field-hint    { font-size: 0.82rem; color: var(--cinnamon-soft); margin: 0; }
 
-/* KBD para atajos de teclado */
-kbd {
-  font-family: 'Atkinson Hyperlegible', sans-serif;
-  font-size: 0.78rem;
-  background: var(--bg-subtle);
-  border: 1px solid var(--vanilla-mid);
-  border-radius: 4px;
-  padding: 0.1rem 0.4rem;
-  color: var(--cinnamon-dark);
-  box-shadow: 0 1px 0 var(--vanilla-mid);
-}
+kbd { font-family: 'Atkinson Hyperlegible', sans-serif; font-size: 0.78rem; background: var(--bg-subtle); border: 1px solid var(--vanilla-mid); border-radius: 4px; padding: 0.1rem 0.4rem; color: var(--cinnamon-dark); box-shadow: 0 1px 0 var(--vanilla-mid); }
 
-/* INPUT DEL ICONO — más grande para ver el emoji */
-.icon-input {
-  font-size: 1.4rem !important;
-  max-width: 120px;
-}
-
-.input-lg   { font-size: 1rem !important;  padding: 0.7rem 0.9rem !important; min-height: 48px !important; }
+.icon-input { font-size: 1.4rem !important; max-width: 120px; }
+.input-lg   { font-size: 1rem !important; padding: 0.7rem 0.9rem !important; min-height: 48px !important; }
 .input-date { font-size: 0.95rem !important; padding: 0.65rem 0.7rem !important; min-height: 48px !important; }
 
-/* FRECUENCIA */
-.freq-btn {
-  text-align: center;
-  padding: 0.9rem 0.5rem;
-  cursor: pointer;
-  font-family: 'Atkinson Hyperlegible', sans-serif;
-  font-size: 0.9rem;
-  font-weight: 700;
-  border-radius: 8px;
-  border: 1.5px solid var(--vanilla-mid);
-  background: var(--bg-subtle);
-  color: var(--cinnamon-mid);
-  transition: all 0.15s;
-}
-
+.freq-btn { text-align: center; padding: 0.9rem 0.5rem; cursor: pointer; font-family: 'Atkinson Hyperlegible', sans-serif; font-size: 0.9rem; font-weight: 700; border-radius: 8px; border: 1.5px solid var(--vanilla-mid); background: var(--bg-subtle); color: var(--cinnamon-mid); transition: all 0.15s; }
 .freq-btn:hover           { background: var(--vanilla-light); }
 .freq-btn:focus-visible   { outline: 3px solid var(--cinnamon-mid); outline-offset: 2px; }
 .freq-btn-icon            { font-size: 1.3rem; }
@@ -469,94 +456,20 @@ kbd {
 .text-weekly  { color: #2A5068; }
 .text-monthly { color: var(--vanilla-deep); }
 
-/* DÍAS */
 .days-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-
-.day-btn {
-  min-width: 52px;
-  height: 52px;
-  border-radius: 10px;
-  border: 2px solid var(--vanilla-light);
-  background: var(--bg-subtle);
-  color: var(--cinnamon-mid);
-  font-family: 'Atkinson Hyperlegible', sans-serif;
-  font-size: 0.82rem;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.15s;
-  padding: 0 0.6rem;
-  user-select: none;
-}
-
+.day-btn { min-width: 52px; height: 52px; border-radius: 10px; border: 2px solid var(--vanilla-light); background: var(--bg-subtle); color: var(--cinnamon-mid); font-family: 'Atkinson Hyperlegible', sans-serif; font-size: 0.82rem; font-weight: 700; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.15s; padding: 0 0.6rem; user-select: none; }
 .day-btn:hover        { border-color: var(--btn-info); background: var(--state-info-bg); color: #2A5068; }
 .day-btn:focus-visible { outline: 3px solid var(--btn-info); outline-offset: 2px; }
 .day-btn-selected     { background: var(--btn-info) !important; border-color: var(--btn-info) !important; color: #fff !important; }
 .days-hint            { font-size: 0.82rem; color: var(--cinnamon-soft); margin: 0.6rem 0 0; }
 
-/* PASOS */
-.step-add-btn {
-  min-height: 48px;
-  white-space: nowrap;
-  font-family: 'Atkinson Hyperlegible', sans-serif;
-  font-weight: 700;
-}
+.step-add-btn { min-height: 48px; white-space: nowrap; font-family: 'Atkinson Hyperlegible', sans-serif; font-weight: 700; }
 
-.step-item {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.65rem 0.9rem;
-  background: var(--bg-base);
-  border: 1px solid var(--vanilla-light);
-  border-left: 3px solid var(--cinnamon-mid);
-  border-radius: 8px;
-}
-
+.step-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.65rem 0.9rem; background: var(--bg-base); border: 1px solid var(--vanilla-light); border-left: 3px solid var(--cinnamon-mid); border-radius: 8px; }
+.step-item-done { background: var(--state-ok-bg); border-color: #C8E4CA; border-left-color: var(--state-ok); }
 .step-drag-icon { color: var(--vanilla-mid); font-size: 1rem; }
+.step-item-text { font-family: 'Atkinson Hyperlegible', sans-serif; font-size: 0.92rem; font-weight: 600; color: var(--cinnamon-dark); }
+.step-remove-btn { width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; flex-shrink: 0; border-radius: 6px; }
 
-.step-item-text {
-  font-family: 'Atkinson Hyperlegible', sans-serif;
-  font-size: 0.92rem;
-  font-weight: 600;
-  color: var(--cinnamon-dark);
-}
-
-.step-remove-btn {
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.9rem;
-  flex-shrink: 0;
-  border-radius: 6px;
-}
-
-/* RESUMEN */
-.routine-summary {
-  background: var(--state-info-bg);
-  border: 1px solid var(--btn-info);
-  border-radius: 10px;
-  padding: 0.85rem 1.1rem;
-  font-family: 'Atkinson Hyperlegible', sans-serif;
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: #2A5068;
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.3rem;
-}
-
-.form-action-btn {
-  font-family: 'Atkinson Hyperlegible', sans-serif;
-  font-size: 1rem;
-  font-weight: 700;
-  min-height: 48px;
-  padding: 0.7rem 1.5rem;
-}
+.form-action-btn { font-family: 'Atkinson Hyperlegible', sans-serif; font-size: 1rem; font-weight: 700; min-height: 48px; padding: 0.7rem 1.5rem; }
 </style>

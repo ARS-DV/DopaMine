@@ -65,6 +65,7 @@ function handleEventClick(info) {
     difficulty: info.event.extendedProps.difficulty || '',
     frecuency:  info.event.extendedProps.frecuency  || '',
     descrip:    info.event.extendedProps.descrip    || '',
+    done:       info.event.extendedProps.done       || false,
     color:      info.event.backgroundColor
   }
 }
@@ -72,6 +73,49 @@ function handleEventClick(info) {
 // funcion para cerrar panel lateral
 function closePanel() {
   selectedEvent.value = null
+}
+
+function getCountdown(dateStr) {
+  if (!dateStr) { return null }
+
+  let now    = new Date()
+  let target = new Date(dateStr)
+  let diffMs = target - now
+
+  // ya venció
+  if (diffMs < 0) { return { expired: true } }
+
+  let diffSecs    = Math.floor(diffMs / 1000)
+  let diffMinutes = Math.floor(diffSecs / 60)
+  let diffHours   = Math.floor(diffMinutes / 60)
+  let diffDays    = Math.floor(diffHours / 24)
+  let diffWeeks   = Math.floor(diffDays / 7)
+  let diffMonths  = Math.floor(diffDays / 30)
+
+  // menos de 24 horas: cuenta regresiva de horas y minutos
+  if (diffHours < 24) {
+    let h = diffHours
+    let m = diffMinutes % 60
+    return { mode: 'hours', hours: h, minutes: m }
+  }
+
+  // entre 1 y 6 días: mostrar días
+  if (diffDays < 7) {
+    return { mode: 'days', days: diffDays }
+  }
+
+  // entre 1 y 4 semanas: mostrar semanas y días restantes
+  if (diffDays < 30) {
+    let weeks       = diffWeeks
+    let remainDays  = diffDays - (weeks * 7)
+    return { mode: 'weeks', weeks: weeks, days: remainDays }
+  }
+
+  // más de un mes: mostrar meses y semanas restantes
+  let months      = diffMonths
+  let remainDays2 = diffDays - (months * 30)
+  let remainWeeks = Math.floor(remainDays2 / 7)
+  return { mode: 'months', months: months, weeks: remainWeeks }
 }
 
 // funcion para mostrar el tipo en español legible
@@ -167,6 +211,54 @@ function getTypeIcon(type) {
                   <div class="detail-label">Date</div>
                   <div class="detail-value">{{ selectedEvent.start }}</div>
                 </div>
+                <div
+  v-if="selectedEvent.type === 'task' && !selectedEvent.done && selectedEvent.end"
+  class="event-detail-row"
+>
+  <i class="bi bi-hourglass-split detail-icon"></i>
+  <div>
+    <div class="detail-label">Time remaining</div>
+    <div class="detail-value">
+
+      <!-- ya venció -->
+      <span v-if="getCountdown(selectedEvent.end).expired" class="countdown-expired">
+        <i class="bi bi-exclamation-triangle me-1"></i>Overdue
+      </span>
+
+      <!-- menos de 24 h: horas y minutos -->
+      <span v-else-if="getCountdown(selectedEvent.end).mode === 'hours'" class="countdown-urgent">
+        <i class="bi bi-clock me-1"></i>
+        {{ getCountdown(selectedEvent.end).hours }}h
+        {{ getCountdown(selectedEvent.end).minutes }}min
+      </span>
+
+      <!-- días -->
+      <span v-else-if="getCountdown(selectedEvent.end).mode === 'days'" class="countdown-days">
+        <i class="bi bi-calendar2 me-1"></i>
+        {{ getCountdown(selectedEvent.end).days }} day(s)
+      </span>
+
+      <!-- semanas y días -->
+      <span v-else-if="getCountdown(selectedEvent.end).mode === 'weeks'" class="countdown-weeks">
+        <i class="bi bi-calendar-week me-1"></i>
+        {{ getCountdown(selectedEvent.end).weeks }} week(s)
+        <span v-if="getCountdown(selectedEvent.end).days > 0">
+          {{ getCountdown(selectedEvent.end).days }} day(s)
+        </span>
+      </span>
+
+      <!-- meses y semanas -->
+      <span v-else class="countdown-months">
+        <i class="bi bi-calendar-month me-1"></i>
+        {{ getCountdown(selectedEvent.end).months }} month(s)
+        <span v-if="getCountdown(selectedEvent.end).weeks > 0">
+          {{ getCountdown(selectedEvent.end).weeks }} week(s)
+        </span>
+      </span>
+
+    </div>
+  </div>
+</div>
               </div>
 
               <div v-if="selectedEvent.difficulty" class="event-detail-row">
@@ -445,4 +537,9 @@ function getTypeIcon(type) {
   font-weight: 600;
   color: var(--cinnamon-dark);
 }
+.countdown-expired { color: var(--state-error); font-weight: 700; }
+.countdown-urgent  { color: var(--state-error); font-weight: 700; }
+.countdown-days    { color: var(--state-warn);  font-weight: 700; }
+.countdown-weeks   { color: var(--cinnamon-mid); font-weight: 700; }
+.countdown-months  { color: var(--state-ok);    font-weight: 700; }
 </style>
