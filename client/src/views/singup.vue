@@ -11,6 +11,7 @@ const nickNameInput = ref('')
 const emailInput = ref('')
 const passwordInput = ref('')
 const errorMessage = ref('')
+const showPassword = ref(false)
 
 //funcion principal
 async function registerUser() {
@@ -81,74 +82,99 @@ async function registerUser() {
     <div class="auth-card">
 
       <!-- FRANJA DECORATIVA SUPERIOR -->
-      <div class="auth-top-strip">
+      <div class="auth-top-strip" aria-hidden="true">
         <i class="bi bi-stars auth-deco-icon"></i>
       </div>
 
       <div class="auth-body">
 
         <!-- LOGO -->
-        <div class="auth-logo">
-          dopamine<em>·app</em>
+        <div class="auth-logo" aria-hidden="true">
+          Dopa<em>Mine</em>
         </div>
 
         <!-- TÍTULO -->
         <h1 class="auth-title">Sign Up</h1>
         <p class="auth-sub">
-          <i class="bi bi-rocket-takeoff me-1"></i> Start building better habits
+          <i class="bi bi-rocket-takeoff me-1" aria-hidden="true"></i> Start building better habits
         </p>
 
         <!-- ERROR -->
-        <div v-if="errorMessage" class="error-text mb-3">
-          <i class="bi bi-exclamation-triangle me-2"></i>
+        <div v-if="errorMessage" class="error-text mb-3" role="alert" aria-live="assertive">
+          <i class="bi bi-exclamation-triangle me-2" aria-hidden="true"></i>
           <strong>{{ errorMessage }}</strong>
         </div>
 
         <!-- FORMULARIO -->
-        <form @submit.prevent="registerUser">
+        <form @submit.prevent="registerUser" novalidate>
 
+          <!-- NICKNAME -->
           <div class="mb-3">
-            <label class="auth-label">
-              <i class="bi bi-person me-1"></i> Nickname
+            <label for="signup-nickname" class="auth-label">
+              <i class="bi bi-person me-1" aria-hidden="true"></i> Nickname
             </label>
             <input
+              id="signup-nickname"
               v-model="nickNameInput"
               type="text"
               class="form-control dopamine-input"
               placeholder="Your nickname"
+              aria-required="true"
+              autocomplete="nickname"
+              aria-describedby="nickname-hint"
             >
+            <p id="nickname-hint" class="field-hint mt-1">No numbers allowed</p>
           </div>
 
+          <!-- EMAIL -->
           <div class="mb-3">
-            <label class="auth-label">
-              <i class="bi bi-envelope me-1"></i> Email
+            <label for="signup-email" class="auth-label">
+              <i class="bi bi-envelope me-1" aria-hidden="true"></i> Email
             </label>
             <input
+              id="signup-email"
               v-model="emailInput"
               type="email"
               class="form-control dopamine-input"
               placeholder="example@mail.com"
+              aria-required="true"
+              autocomplete="email"
             >
           </div>
 
+          <!-- PASSWORD -->
           <div class="mb-4">
-            <label class="auth-label">
-              <i class="bi bi-lock me-1"></i> Password
+            <label for="signup-password" class="auth-label">
+              <i class="bi bi-lock me-1" aria-hidden="true"></i> Password
               <span class="auth-label-hint">min. 7 characters</span>
             </label>
-            <input
-              v-model="passwordInput"
-              type="password"
-              class="form-control dopamine-input"
-              placeholder="••••••••"
-            >
+            <div class="pswd-wrapper">
+              <input
+                id="signup-password"
+                v-model="passwordInput"
+                :type="showPassword ? 'text' : 'password'"
+                class="form-control dopamine-input"
+                placeholder="••••••••"
+                aria-required="true"
+                autocomplete="new-password"
+              >
+              <button
+                type="button"
+                class="pswd-toggle"
+                :aria-label="showPassword ? 'Hide password' : 'Show password'"
+                :aria-pressed="showPassword"
+                @click="showPassword = !showPassword"
+              >
+                <i class="bi" :class="showPassword ? 'bi-eye-slash' : 'bi-eye'" aria-hidden="true"></i>
+              </button>
+            </div>
           </div>
 
           <button
             type="submit"
             class="btn-dopamine btn-dopamine-primary w-100 auth-btn"
           >
-            <i class="bi bi-person-plus me-2"></i> Create Account
+            <i class="bi bi-person-plus me-2" aria-hidden="true"></i> Create Account
           </button>
 
         </form>
@@ -165,8 +191,6 @@ async function registerUser() {
 </template>
 
 <style scoped>
-/* Mismos estilos que login.vue para consistencia */
-
 .auth-wrapper {
   min-height: 100vh;
   background-color: var(--bg-subtle);
@@ -186,7 +210,6 @@ async function registerUser() {
   overflow: hidden;
 }
 
-/* FRANJA SUPERIOR — distinto icono al del login */
 .auth-top-strip {
   background: var(--cinnamon-dark);
   height: 58px;
@@ -200,7 +223,6 @@ async function registerUser() {
   color: var(--vanilla-light);
 }
 
-/* CUERPO */
 .auth-body {
   padding: 1.8rem 2rem 2rem;
 }
@@ -248,12 +270,47 @@ async function registerUser() {
   margin-bottom: 0.45rem;
 }
 
-/* Texto de ayuda pequeño dentro del label */
 .auth-label-hint {
   font-size: 0.75rem;
   font-weight: 400;
   color: var(--cinnamon-soft);
   margin-left: auto;
+}
+
+.field-hint {
+  font-size: 0.78rem;
+  color: var(--cinnamon-soft);
+  margin: 0;
+}
+
+/* CONTRASEÑA CON OJO */
+.pswd-wrapper { position: relative; }
+
+.pswd-wrapper .dopamine-input { padding-right: 3rem !important; }
+
+.pswd-toggle {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--cinnamon-soft);
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: color 0.15s;
+}
+
+.pswd-toggle:hover { color: var(--cinnamon-dark); }
+
+.pswd-toggle:focus-visible {
+  outline: 3px solid var(--cinnamon-mid);
+  outline-offset: 2px;
 }
 
 .auth-btn {
@@ -262,6 +319,11 @@ async function registerUser() {
   font-weight: 700;
   padding: 0.75rem 1rem;
   min-height: 48px;
+}
+
+.auth-btn:focus-visible {
+  outline: 3px solid var(--cinnamon-mid);
+  outline-offset: 3px;
 }
 
 .auth-footer-text {
@@ -281,7 +343,5 @@ async function registerUser() {
   text-underline-offset: 3px;
 }
 
-.auth-footer-text a:hover {
-  color: var(--cinnamon-mid);
-}
+.auth-footer-text a:hover { color: var(--cinnamon-mid); }
 </style>

@@ -12,6 +12,7 @@ const userStore = useUserStore()
 const emailInput = ref('')
 const passwordInput = ref('')
 const errorMessage = ref('')
+const showPassword = ref(false)
 
 //funcion principal
 function loginUser() {
@@ -60,58 +61,78 @@ function loginUser() {
     <div class="auth-card">
 
       <!-- FRANJA DECORATIVA SUPERIOR -->
-      <div class="auth-top-strip">
+      <div class="auth-top-strip" aria-hidden="true">
         <i class="bi bi-lightning-charge-fill auth-deco-icon"></i>
       </div>
 
       <div class="auth-body">
 
         <!-- LOGO -->
-        <div class="auth-logo">
-          DopaMine
+        <div class="auth-logo" aria-hidden="true">
+          Dopa<em>Mine</em>
         </div>
 
         <!-- TÍTULO -->
         <h1 class="auth-title">Sign In</h1>
         <p class="auth-sub">
-          <i class="bi bi-hand-wave me-1"></i> Welcome back :)
+          <i class="bi bi-hand-wave me-1" aria-hidden="true"></i> Welcome back
         </p>
 
         <!-- ERROR -->
-        <div v-if="errorMessage" class="error-text mb-3">
-          <i class="bi bi-exclamation-triangle me-2"></i>
+        <div v-if="errorMessage" class="error-text mb-3" role="alert" aria-live="assertive">
+          <i class="bi bi-exclamation-triangle me-2" aria-hidden="true"></i>
           <strong>{{ errorMessage }}</strong>
         </div>
 
         <!-- FORMULARIO -->
-        <form @submit.prevent="loginUser">
+        <form @submit.prevent="loginUser" novalidate>
 
           <div class="mb-3">
-            <label class="auth-label">
-              <i class="bi bi-envelope me-1"></i> Email
+            <label for="login-email" class="auth-label">
+              <i class="bi bi-envelope me-1" aria-hidden="true"></i> Email
             </label>
             <input
+              id="login-email"
               v-model="emailInput"
               type="email"
               class="form-control dopamine-input"
               placeholder="example@mail.com"
+              aria-required="true"
+              autocomplete="email"
             >
           </div>
 
           <div class="mb-4">
-            <label class="auth-label">
-              <i class="bi bi-lock me-1"></i> Password
+            <label for="login-password" class="auth-label">
+              <i class="bi bi-lock me-1" aria-hidden="true"></i> Password
             </label>
-            <input
-              v-model="passwordInput"
-              type="password"
-              class="form-control dopamine-input"
-              placeholder="••••••••"
-            >
+            <div class="pswd-wrapper">
+              <input
+                id="login-password"
+                v-model="passwordInput"
+                :type="showPassword ? 'text' : 'password'"
+                class="form-control dopamine-input"
+                placeholder="••••••••"
+                aria-required="true"
+                autocomplete="current-password"
+              >
+              <button
+                type="button"
+                class="pswd-toggle"
+                :aria-label="showPassword ? 'Hide password' : 'Show password'"
+                :aria-pressed="showPassword"
+                @click="showPassword = !showPassword"
+              >
+                <i class="bi" :class="showPassword ? 'bi-eye-slash' : 'bi-eye'" aria-hidden="true"></i>
+              </button>
+            </div>
           </div>
 
-          <button type="submit" class="btn-dopamine btn-dopamine-primary w-100 auth-btn">
-            <i class="bi bi-box-arrow-in-right me-2"></i> Sign In
+          <button
+            type="submit"
+            class="btn-dopamine btn-dopamine-primary w-100 auth-btn"
+          >
+            <i class="bi bi-box-arrow-in-right me-2" aria-hidden="true"></i> Sign In
           </button>
 
         </form>
@@ -207,12 +228,51 @@ function loginUser() {
   margin-bottom: 0.45rem;
 }
 
+/* CAMPO CONTRASEÑA CON OJO */
+.pswd-wrapper {
+  position: relative;
+}
+
+.pswd-wrapper .dopamine-input {
+  padding-right: 3rem !important;
+}
+
+.pswd-toggle {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--cinnamon-soft);
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: color 0.15s;
+}
+
+.pswd-toggle:hover { color: var(--cinnamon-dark); }
+
+.pswd-toggle:focus-visible {
+  outline: 3px solid var(--cinnamon-mid);
+  outline-offset: 2px;
+}
+
 .auth-btn {
   font-family: 'Atkinson Hyperlegible', sans-serif;
   font-size: 1rem;
   font-weight: 700;
   padding: 0.75rem 1rem;
   min-height: 48px;
+}
+
+.auth-btn:focus-visible {
+  outline: 3px solid var(--cinnamon-mid);
+  outline-offset: 3px;
 }
 
 .auth-footer-text {
@@ -232,7 +292,5 @@ function loginUser() {
   text-underline-offset: 3px;
 }
 
-.auth-footer-text a:hover {
-  color: var(--cinnamon-mid);
-}
+.auth-footer-text a:hover { color: var(--cinnamon-mid); }
 </style>

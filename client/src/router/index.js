@@ -13,6 +13,7 @@ import NewRoutineView from "@/views/RoutinesView.vue";
 import EditTaskView from "@/views/EditTaskView.vue";
 import EditRoutineView from "@/views/EditRoutineView.vue";
 import AdminView from "@/views/AdminView.vue";
+import ProfileView from "@/views/ProfileView.vue";
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -81,6 +82,7 @@ const router = createRouter({
       component: EditRoutineView, 
       meta: { hideHeader: true } 
     },
+    { path: '/profile', component: ProfileView }
   ],
   
 });
