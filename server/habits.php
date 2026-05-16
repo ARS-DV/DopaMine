@@ -7,10 +7,9 @@ if (!isset($method)) {
     exit;
 }
 
-// GET para obtener habitos del usuario
+// GET — obtener hábitos del usuario
 if ($method === 'GET') {
 
-    //detalles habito 
     if (isset($_GET['id'])) {
         $id = intval($_GET['id']);
 
@@ -36,7 +35,6 @@ if ($method === 'GET') {
         $habit['days'] = $days;
         echo json_encode($habit, JSON_UNESCAPED_UNICODE);
 
-    // habitos de hoy del usuario
     } elseif (isset($_GET['user_id']) && isset($_GET['today'])) {
         $user_id      = intval($_GET['user_id']);
         $today_name   = strtolower(date('l'));
@@ -44,8 +42,8 @@ if ($method === 'GET') {
 
         $stmt = $conn->prepare("
             SELECT h.*,
-                   (SELECT done FROM habit_record
-                    WHERE habit_id = h.id AND dateOfHabit = CURDATE()) AS done_today
+                   COALESCE((SELECT done FROM habit_record
+                    WHERE habit_id = h.id AND dateOfHabit = CURDATE()), 0) AS done_today
             FROM habit h
             WHERE h.user_id = ?
             AND (
@@ -60,12 +58,15 @@ if ($method === 'GET') {
         $stmt->execute();
         $result = $stmt->get_result();
         $habits = [];
-        while ($row = $result->fetch_assoc()) $habits[] = $row;
+        while ($row = $result->fetch_assoc()) {
+            // ✅ done_today como entero, no bool
+            $row['done_today'] = intval($row['done_today']);
+            $habits[] = $row;
+        }
         $stmt->close();
 
         echo json_encode($habits, JSON_UNESCAPED_UNICODE);
 
-    // todos los habitos del usuario
     } elseif (isset($_GET['user_id'])) {
         $user_id = intval($_GET['user_id']);
 
@@ -74,14 +75,13 @@ if ($method === 'GET') {
         $stmt->execute();
         $result = $stmt->get_result();
 
-        // se guarda todo en array y se cierra antes de hacer sub-queries
         $habits = [];
         while ($row = $result->fetch_assoc()) $habits[] = $row;
         $stmt->close();
 
         foreach ($habits as &$habit) {
 
-            //dias especificos
+            // Días específicos
             $stmt2 = $conn->prepare("SELECT dayOfWeek FROM habit_day WHERE habit_id = ?");
             $stmt2->bind_param("i", $habit['id']);
             $stmt2->execute();
@@ -91,28 +91,33 @@ if ($method === 'GET') {
             $stmt2->close();
             $habit['days'] = $days;
 
-            //racha actual
+            // Racha actual — solo done = 2 cuenta como completado ✅
             $stmt3 = $conn->prepare("
-                SELECT COUNT(*) AS streak
-                FROM (
-                    SELECT dateOfHabit,
-                           @row := @row + 1 AS rn,
-                           DATEDIFF(CURDATE(), dateOfHabit) AS diff
-                    FROM habit_record, (SELECT @row := 0) r
-                    WHERE habit_id = ? AND done = 1
-                    ORDER BY dateOfHabit DESC
-                ) t
-                WHERE diff = rn - 1
+                SELECT dateOfHabit, done FROM habit_record
+                WHERE habit_id = ?
+                ORDER BY dateOfHabit DESC
             ");
             $stmt3->bind_param("i", $habit['id']);
             $stmt3->execute();
-            $streak = $stmt3->get_result()->fetch_assoc();
+            $streak_result = $stmt3->get_result();
             $stmt3->close();
-            $habit['streak'] = intval($streak['streak']);
 
-            //total completado
+            $streak   = 0;
+            $expected = new DateTime(date('Y-m-d'));
+            while ($rec = $streak_result->fetch_assoc()) {
+                $date     = new DateTime($rec['dateOfHabit']);
+                $rec_done = intval($rec['done']);
+                if ($date == $expected) {
+                    if ($rec_done == 2)     { $streak++; $expected->modify('-1 day'); }
+                    elseif ($rec_done == 1) { $expected->modify('-1 day'); }
+                    else break;
+                } elseif ($date < $expected) break;
+            }
+            $habit['streak'] = $streak;
+
+            // Total completado — done = 2 ✅
             $stmt4 = $conn->prepare(
-                "SELECT COUNT(*) AS total FROM habit_record WHERE habit_id = ? AND done = 1"
+                "SELECT COUNT(*) AS total FROM habit_record WHERE habit_id = ? AND done = 2"
             );
             $stmt4->bind_param("i", $habit['id']);
             $stmt4->execute();
@@ -120,7 +125,7 @@ if ($method === 'GET') {
             $stmt4->close();
             $habit['total_done'] = intval($total['total']);
 
-            //saber si se completo hoy
+            // ¿Completado/intentado hoy? — devuelve entero 0/1/2 ✅
             $stmt5 = $conn->prepare(
                 "SELECT done FROM habit_record WHERE habit_id = ? AND dateOfHabit = CURDATE()"
             );
@@ -128,7 +133,7 @@ if ($method === 'GET') {
             $stmt5->execute();
             $today_rec = $stmt5->get_result()->fetch_assoc();
             $stmt5->close();
-            $habit['done_today'] = $today_rec ? (bool)$today_rec['done'] : false;
+            $habit['done_today'] = $today_rec ? intval($today_rec['done']) : 0;
         }
 
         echo json_encode($habits, JSON_UNESCAPED_UNICODE);
@@ -139,7 +144,7 @@ if ($method === 'GET') {
 }
 
 
-// POST para crear habito
+// POST — crear hábito
 if ($method === 'POST') {
     $data       = json_decode(file_get_contents('php://input'), true);
     $user_id    = intval($data['user_id']);
@@ -172,11 +177,7 @@ if ($method === 'POST') {
         }
 
         $conn->commit();
-        echo json_encode([
-            'status'  => 'success',
-            'message' => 'Habit created',
-            'id'      => $habit_id
-        ]);
+        echo json_encode(['status' => 'success', 'message' => 'Habit created', 'id' => $habit_id]);
 
     } catch (Exception $e) {
         $conn->rollback();
@@ -185,7 +186,7 @@ if ($method === 'POST') {
 }
 
 
-// PUT para editar habito
+// PUT — editar hábito
 if ($method === 'PUT') {
     $id         = intval($_GET['id']);
     $data       = json_decode(file_get_contents('php://input'), true);
@@ -231,14 +232,13 @@ if ($method === 'PUT') {
 }
 
 
-// PATCH para marcar hábito 
+// PATCH — marcar hábito (0 = no, 1 = tried, 2 = done)
 if ($method === 'PATCH') {
     $id    = intval($_GET['id']);
     $data  = json_decode(file_get_contents('php://input'), true);
-    $done  = intval($data['done']); // 0, 1 o 2
+    $done  = intval($data['done']);
     $today = date('Y-m-d');
 
-    //insertar o actualizar habit_record de hoy
     $stmt = $conn->prepare(
         "SELECT id FROM habit_record WHERE habit_id = ? AND dateOfHabit = ?"
     );
@@ -263,7 +263,7 @@ if ($method === 'PATCH') {
         $stmt2->close();
     }
 
-    //calcular racha actual, tried (1) no rompe la racha pero tampoco la aumenta
+    // Calcular racha actual
     $stmt3 = $conn->prepare("
         SELECT dateOfHabit, done FROM habit_record
         WHERE habit_id = ?
@@ -276,30 +276,16 @@ if ($method === 'PATCH') {
 
     $streak   = 0;
     $expected = new DateTime($today);
-
     while ($row = $result->fetch_assoc()) {
-        $date      = new DateTime($row['dateOfHabit']);
-        $row_done  = intval($row['done']);
-
+        $date     = new DateTime($row['dateOfHabit']);
+        $row_done = intval($row['done']);
         if ($date == $expected) {
-            if ($row_done == 2) {
-                // done, suma a la racha y avanza
-                $streak++;
-                $expected->modify('-1 day');
-            } elseif ($row_done == 1) {
-                // Intentado, ni suma ni rompe, avanza sin sumar
-                $expected->modify('-1 day');
-            } else {
-                // no hecho, rompe la racha
-                break;
-            }
-        } elseif ($date < $expected) {
-            // si hay un hueco sin registro, rompe la racha
-            break;
-        }
+            if ($row_done == 2)     { $streak++; $expected->modify('-1 day'); }
+            elseif ($row_done == 1) { $expected->modify('-1 day'); }
+            else break;
+        } elseif ($date < $expected) break;
     }
 
-    //actualizar best_streak si la racha actual la supera
     if ($done == 2) {
         $stmt4 = $conn->prepare(
             "UPDATE habit SET best_streak = GREATEST(best_streak, ?) WHERE id = ?"
@@ -317,8 +303,7 @@ if ($method === 'PATCH') {
 }
 
 
-
-// DELETE para eliminar hábito
+// DELETE — eliminar hábito
 if ($method === 'DELETE') {
     $id   = intval($_GET['id']);
     $stmt = $conn->prepare("DELETE FROM habit WHERE id = ?");

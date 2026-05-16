@@ -1,7 +1,7 @@
 <?php
 include 'db.php';
 
-// GET para obtener checklist de una rutina
+// GET — obtener checklist de una rutina
 if ($method === 'GET') {
     if (!isset($_GET['routine_id'])) {
         echo json_encode(['status' => 'error', 'message' => 'routine_id is required']);
@@ -21,13 +21,13 @@ if ($method === 'GET') {
 }
 
 
-// POST para añadir paso checklist rutina
+// POST — añadir paso al checklist de una rutina
 if ($method === 'POST') {
     $data       = json_decode(file_get_contents('php://input'), true);
     $routine_id = intval($data['routine_id']);
     $title      = $data['title'];
 
-    //calcular el siguiente sort_order
+    // Calcular el siguiente sort_order
     $stmt = $conn->prepare(
         "SELECT COALESCE(MAX(sort_order), 0) + 1 AS next_order
          FROM routine_checklist WHERE routine_id = ?"
@@ -53,7 +53,7 @@ if ($method === 'POST') {
 }
 
 
-// PATCH para marcar paso como hecho o no hecho
+// PATCH — marcar paso como hecho o no hecho
 if ($method === 'PATCH') {
     $id   = intval($_GET['id']);
     $data = json_decode(file_get_contents('php://input'), true);
@@ -68,12 +68,12 @@ if ($method === 'PATCH') {
 }
 
 
-// PUT para editar título de un paso o reordenar
+// PUT — editar título de un paso o reordenar
 if ($method === 'PUT') {
     $id   = intval($_GET['id']);
     $data = json_decode(file_get_contents('php://input'), true);
 
-    //reordenar (
+    // Reordenar (recibe array de ids en el nuevo orden)
     if (isset($data['order']) && is_array($data['order'])) {
         $conn->begin_transaction();
         try {
@@ -92,7 +92,7 @@ if ($method === 'PUT') {
             echo json_encode(['status' => 'error', 'message' => 'Error updating order']);
         }
 
-    //editar título
+    // Editar título
     } elseif (isset($data['title'])) {
         $title = $data['title'];
         $stmt  = $conn->prepare("UPDATE routine_checklist SET title = ? WHERE id = ?");
@@ -105,7 +105,7 @@ if ($method === 'PUT') {
 }
 
 
-// DELETE para eliminar paso del checklist
+// DELETE — eliminar paso del checklist
 if ($method === 'DELETE') {
     $id   = intval($_GET['id']);
     $stmt = $conn->prepare("DELETE FROM routine_checklist WHERE id = ?");

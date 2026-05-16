@@ -13,6 +13,15 @@ const passwordInput = ref('')
 const errorMessage = ref('')
 const showPassword = ref(false)
 
+// validacion estricta de contraseña
+function validatePassword(pswd) {
+  if (pswd.length < 10)        return 'Password must be at least 10 characters'
+  if (!/[A-Z]/.test(pswd))     return 'Password must contain at least one uppercase letter'
+  if (!/[a-z]/.test(pswd))     return 'Password must contain at least one lowercase letter'
+  if (!/[0-9]/.test(pswd))     return 'Password must contain at least one number'
+  return null
+}
+
 //funcion principal
 async function registerUser() {
   errorMessage.value = ''
@@ -43,8 +52,9 @@ async function registerUser() {
 
   //validacion contraseña
   //TODO: requerir una contraseña más compleja
-  if (passwordInput.value.length < 7) {
-    errorMessage.value = 'Password must be at least 7 characters'
+  let pswdError = validatePassword(passwordInput.value)
+  if (pswdError) {
+    errorMessage.value = pswdError
     return
   }
 
@@ -146,7 +156,7 @@ async function registerUser() {
           <div class="mb-4">
             <label for="signup-password" class="auth-label">
               <i class="bi bi-lock me-1" aria-hidden="true"></i> Password
-              <span class="auth-label-hint">min. 7 characters</span>
+              <span class="auth-label-hint">10+ chars, A-Z, a-z, 0-9</span>
             </label>
             <div class="pswd-wrapper">
               <input

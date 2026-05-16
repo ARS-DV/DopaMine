@@ -89,15 +89,13 @@ async function saveProfile() {
     return
   }
 
-  if (pswdInput.value !== '' && pswdInput.value.length < 7) {
-    errorMessage.value = 'Password must be at least 7 characters'
-    return
-  }
-
-  if (pswdInput.value !== pswdConfirm.value) {
-    errorMessage.value = 'Passwords do not match'
-    return
-  }
+ function validatePassword(pswd) {
+  if (pswd.length < 10)            return 'Password must be at least 10 characters'
+  if (!/[A-Z]/.test(pswd))         return 'Password must contain at least one uppercase letter'
+  if (!/[a-z]/.test(pswd))         return 'Password must contain at least one lowercase letter'
+  if (!/[0-9]/.test(pswd))         return 'Password must contain at least one number'
+  return null
+}
 
   loading.value = true
 
@@ -168,7 +166,28 @@ async function saveProfile() {
     errorMessage.value = 'Connection error'
   })
 }
+function deleteAccount() {
+  let first = confirm('Are you sure you want to delete your account?')
+  if (!first) return
 
+  let second = confirm('This will permanently delete all your habits, tasks and routines. This cannot be undone.')
+  if (!second) return
+
+  fetch(rutaApi + "?entity=users&id=" + userStore.user.id, {
+    method:  'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ requester_id: userStore.user.id })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.status === 'success') {
+      userStore.logout()
+      router.push('/login')
+    } else {
+      errorMessage.value = data.message
+    }
+  })
+}
 onMounted(function() {
   loadUserData()
 })
@@ -394,7 +413,19 @@ onMounted(function() {
             <i class="bi bi-x me-2" aria-hidden="true"></i> Cancel
           </button>
         </div>
-
+        <div class="danger-zone mt-4">
+  <p class="danger-label">
+    <i class="bi bi-exclamation-triangle me-2" aria-hidden="true"></i>Danger zone
+  </p>
+  <button
+    type="button"
+    class="btn-dopamine btn-dopamine-danger form-action-btn"
+    aria-label="Permanently delete your account and all your data"
+    @click="deleteAccount"
+  >
+    <i class="bi bi-trash me-2" aria-hidden="true"></i> Delete my account
+  </button>
+</div>
       </form>
     </div>
   </div>
@@ -613,5 +644,20 @@ onMounted(function() {
 .form-action-btn:disabled {
   opacity: 0.65;
   cursor: not-allowed;
+}
+
+.danger-zone {
+  border-top: 1.5px solid var(--state-error-bg);
+  padding-top: 1.5rem;
+}
+
+.danger-label {
+  font-family: 'Atkinson Hyperlegible', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--state-error);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 0.8rem;
 }
 </style>

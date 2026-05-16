@@ -397,6 +397,13 @@ onMounted(function() {
         <div v-if="routinesList.length === 0" class="empty-state">
           <i class="bi bi-calendar-x empty-icon" aria-hidden="true"></i>
           <p class="empty-title">No routines for today</p>
+          <button
+            class="btn-dopamine btn-dopamine-primary mt-2"
+            aria-label="Create your first routine"
+            @click="router.push('/routines/new')"
+          >
+            <i class="bi bi-plus me-1" aria-hidden="true"></i> Create your first routine
+          </button>
         </div>
 
         <div v-else class="d-flex flex-column gap-2" role="list">

@@ -10,9 +10,8 @@ import { rutaApi } from '@/config.js'
 
 const userStore = useUserStore()
 
-// lista de eventos para el calendario
-const loading        = ref(false)
-const errorMessage   = ref('')
+const loading      = ref(false)
+const errorMessage = ref('')
 
 // evento seleccionado para el panel lateral
 const selectedEvent = ref(null)
@@ -28,7 +27,7 @@ const calendarOptions = ref({
     center: 'title',
     right:  'dayGridMonth,timeGridWeek'
   },
-  // ✅ events como función — FullCalendar pasa start y end automáticamente
+  // events como función — FullCalendar pasa start y end automáticamente
   events: function(info, successCallback, failureCallback) {
     let start = info.startStr.split('T')[0]
     let end   = info.endStr.split('T')[0]
@@ -52,9 +51,6 @@ const calendarOptions = ref({
   dayMaxEvents: 3,
 })
 
-// funcion para cargar los eventos del servidor
-
-
 // funcion al hacer clic en un evento
 function handleEventClick(info) {
   selectedEvent.value = {
@@ -75,6 +71,7 @@ function closePanel() {
   selectedEvent.value = null
 }
 
+// cuenta regresiva desde ahora hasta la fecha de vencimiento de una tarea
 function getCountdown(dateStr) {
   if (!dateStr) { return null }
 
@@ -82,7 +79,6 @@ function getCountdown(dateStr) {
   let target = new Date(dateStr)
   let diffMs = target - now
 
-  // ya venció
   if (diffMs < 0) { return { expired: true } }
 
   let diffSecs    = Math.floor(diffMs / 1000)
@@ -92,33 +88,29 @@ function getCountdown(dateStr) {
   let diffWeeks   = Math.floor(diffDays / 7)
   let diffMonths  = Math.floor(diffDays / 30)
 
-  // menos de 24 horas: cuenta regresiva de horas y minutos
   if (diffHours < 24) {
     let h = diffHours
     let m = diffMinutes % 60
     return { mode: 'hours', hours: h, minutes: m }
   }
 
-  // entre 1 y 6 días: mostrar días
   if (diffDays < 7) {
     return { mode: 'days', days: diffDays }
   }
 
-  // entre 1 y 4 semanas: mostrar semanas y días restantes
   if (diffDays < 30) {
-    let weeks       = diffWeeks
-    let remainDays  = diffDays - (weeks * 7)
+    let weeks      = diffWeeks
+    let remainDays = diffDays - (weeks * 7)
     return { mode: 'weeks', weeks: weeks, days: remainDays }
   }
 
-  // más de un mes: mostrar meses y semanas restantes
   let months      = diffMonths
   let remainDays2 = diffDays - (months * 30)
   let remainWeeks = Math.floor(remainDays2 / 7)
   return { mode: 'months', months: months, weeks: remainWeeks }
 }
 
-// funcion para mostrar el tipo en español legible
+// funcion para mostrar el tipo en legible
 function getTypeLabel(type) {
   if (type === 'task')    { return 'Task' }
   if (type === 'habit')   { return 'Habit' }
@@ -133,8 +125,6 @@ function getTypeIcon(type) {
   if (type === 'routine') { return 'bi-list-check' }
   return 'bi-calendar-event'
 }
-
-
 </script>
 
 <template>
@@ -147,158 +137,162 @@ function getTypeIcon(type) {
         Calendar
       </h1>
       <!-- LEYENDA -->
-      <div class="d-flex gap-3 align-items-center">
+      <div class="d-flex gap-3 align-items-center" aria-label="Event types legend">
         <div class="legend-item">
-          <span class="legend-dot dot-task"></span>
+          <span class="legend-dot dot-task" aria-hidden="true"></span>
           <span class="legend-label">Tasks</span>
         </div>
         <div class="legend-item">
-          <span class="legend-dot dot-habit"></span>
+          <span class="legend-dot dot-habit" aria-hidden="true"></span>
           <span class="legend-label">Habits</span>
         </div>
         <div class="legend-item">
-          <span class="legend-dot dot-routine"></span>
+          <span class="legend-dot dot-routine" aria-hidden="true"></span>
           <span class="legend-label">Routines</span>
         </div>
       </div>
     </div>
 
     <!-- ERROR -->
-    <div v-if="errorMessage" class="error-text mb-3">
-      <i class="bi bi-exclamation-triangle me-2"></i>{{ errorMessage }}
+    <div v-if="errorMessage" class="error-text mb-3" role="alert">
+      <i class="bi bi-exclamation-triangle me-2" aria-hidden="true"></i>{{ errorMessage }}
     </div>
 
-    <!-- LOADING -->
-    <div v-if="loading" class="loading-text">
-      <div class="spinner-border spinner-border-sm me-2" role="status"></div>
-      Loading calendar...
-    </div>
+    <div class="row g-4">
 
-    <template v-else>
-      <div class="row g-4">
-
-        <!-- CALENDARIO -->
-        <div :class="selectedEvent ? 'col-12 col-lg-8' : 'col-12'">
-          <div class="calendar-card fade-up delay-1">
-            <FullCalendar :options="calendarOptions" />
-          </div>
+      <!-- CALENDARIO -->
+      <div :class="selectedEvent ? 'col-12 col-lg-8' : 'col-12'">
+        <div class="calendar-card fade-up delay-1">
+          <FullCalendar :options="calendarOptions" />
         </div>
-
-        <!-- PANEL LATERAL — evento seleccionado -->
-        <div v-if="selectedEvent" class="col-12 col-lg-4 fade-up">
-          <div class="event-panel">
-
-            <!-- CABECERA DEL PANEL -->
-            <div class="event-panel-header" :style="{ borderLeftColor: selectedEvent.color }">
-              <div class="d-flex align-items-center justify-content-between mb-2">
-                <span class="event-type-badge">
-                  <i class="bi me-1" :class="getTypeIcon(selectedEvent.type)"></i>
-                  {{ getTypeLabel(selectedEvent.type) }}
-                </span>
-                <button class="btn-dopamine btn-dopamine-ghost btn-close-panel" @click="closePanel">
-                  <i class="bi bi-x"></i>
-                </button>
-              </div>
-              <h2 class="event-panel-title">{{ selectedEvent.title }}</h2>
-            </div>
-
-            <!-- DETALLES -->
-            <div class="event-panel-body">
-
-              <div v-if="selectedEvent.start" class="event-detail-row">
-                <i class="bi bi-calendar3 detail-icon"></i>
-                <div>
-                  <div class="detail-label">Date</div>
-                  <div class="detail-value">{{ selectedEvent.start }}</div>
-                </div>
-                <div
-  v-if="selectedEvent.type === 'task' && !selectedEvent.done && selectedEvent.end"
-  class="event-detail-row"
->
-  <i class="bi bi-hourglass-split detail-icon"></i>
-  <div>
-    <div class="detail-label">Time remaining</div>
-    <div class="detail-value">
-
-      <!-- ya venció -->
-      <span v-if="getCountdown(selectedEvent.end).expired" class="countdown-expired">
-        <i class="bi bi-exclamation-triangle me-1"></i>Overdue
-      </span>
-
-      <!-- menos de 24 h: horas y minutos -->
-      <span v-else-if="getCountdown(selectedEvent.end).mode === 'hours'" class="countdown-urgent">
-        <i class="bi bi-clock me-1"></i>
-        {{ getCountdown(selectedEvent.end).hours }}h
-        {{ getCountdown(selectedEvent.end).minutes }}min
-      </span>
-
-      <!-- días -->
-      <span v-else-if="getCountdown(selectedEvent.end).mode === 'days'" class="countdown-days">
-        <i class="bi bi-calendar2 me-1"></i>
-        {{ getCountdown(selectedEvent.end).days }} day(s)
-      </span>
-
-      <!-- semanas y días -->
-      <span v-else-if="getCountdown(selectedEvent.end).mode === 'weeks'" class="countdown-weeks">
-        <i class="bi bi-calendar-week me-1"></i>
-        {{ getCountdown(selectedEvent.end).weeks }} week(s)
-        <span v-if="getCountdown(selectedEvent.end).days > 0">
-          {{ getCountdown(selectedEvent.end).days }} day(s)
-        </span>
-      </span>
-
-      <!-- meses y semanas -->
-      <span v-else class="countdown-months">
-        <i class="bi bi-calendar-month me-1"></i>
-        {{ getCountdown(selectedEvent.end).months }} month(s)
-        <span v-if="getCountdown(selectedEvent.end).weeks > 0">
-          {{ getCountdown(selectedEvent.end).weeks }} week(s)
-        </span>
-      </span>
-
-    </div>
-  </div>
-</div>
-              </div>
-
-              <div v-if="selectedEvent.difficulty" class="event-detail-row">
-                <i class="bi bi-bar-chart detail-icon"></i>
-                <div>
-                  <div class="detail-label">Difficulty</div>
-                  <div class="detail-value">
-                    <span class="bdg" :class="'bdg-' + selectedEvent.difficulty">
-                      {{ selectedEvent.difficulty }}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div v-if="selectedEvent.frecuency" class="event-detail-row">
-                <i class="bi bi-arrow-repeat detail-icon"></i>
-                <div>
-                  <div class="detail-label">Frequency</div>
-                  <div class="detail-value">
-                    <span class="bdg" :class="selectedEvent.frecuency === 'daily' ? 'bdg-daily' : selectedEvent.frecuency === 'weekly' ? 'bdg-weekly' : 'bdg-monthly'">
-                      {{ selectedEvent.frecuency }}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div v-if="selectedEvent.descrip" class="event-detail-row">
-                <i class="bi bi-text-left detail-icon"></i>
-                <div>
-                  <div class="detail-label">Description</div>
-                  <div class="detail-value">{{ selectedEvent.descrip }}</div>
-                </div>
-              </div>
-
-            </div>
-          </div>
-        </div>
-
       </div>
-    </template>
+
+      <!-- PANEL LATERAL — evento seleccionado -->
+      <div v-if="selectedEvent" class="col-12 col-lg-4 fade-up">
+        <div class="event-panel" role="complementary" aria-label="Event details">
+
+          <!-- CABECERA DEL PANEL -->
+          <div class="event-panel-header" :style="{ borderLeftColor: selectedEvent.color }">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <span class="event-type-badge">
+                <i class="bi me-1" :class="getTypeIcon(selectedEvent.type)" aria-hidden="true"></i>
+                {{ getTypeLabel(selectedEvent.type) }}
+              </span>
+              <button
+                class="btn-dopamine btn-dopamine-ghost btn-close-panel"
+                aria-label="Close event details panel"
+                @click="closePanel"
+              >
+                <i class="bi bi-x" aria-hidden="true"></i>
+              </button>
+            </div>
+            <h2 class="event-panel-title">{{ selectedEvent.title }}</h2>
+          </div>
+
+          <!-- DETALLES -->
+          <div class="event-panel-body">
+
+            <!-- FECHA -->
+            <div v-if="selectedEvent.start" class="event-detail-row">
+              <i class="bi bi-calendar3 detail-icon" aria-hidden="true"></i>
+              <div>
+                <div class="detail-label">Date</div>
+                <div class="detail-value">{{ selectedEvent.start }}</div>
+              </div>
+            </div>
+
+            <!-- CUENTA REGRESIVA — solo tareas no completadas ✅ fuera del div de fecha -->
+            <div
+              v-if="selectedEvent.type === 'task' && !selectedEvent.done && selectedEvent.end"
+              class="event-detail-row"
+            >
+              <i class="bi bi-hourglass-split detail-icon" aria-hidden="true"></i>
+              <div>
+                <div class="detail-label">Time remaining</div>
+                <div class="detail-value">
+                  <span v-if="getCountdown(selectedEvent.end).expired" class="countdown-expired">
+                    <i class="bi bi-exclamation-triangle me-1" aria-hidden="true"></i>Overdue
+                  </span>
+                  <span v-else-if="getCountdown(selectedEvent.end).mode === 'hours'" class="countdown-urgent">
+                    <i class="bi bi-clock me-1" aria-hidden="true"></i>
+                    {{ getCountdown(selectedEvent.end).hours }}h
+                    {{ getCountdown(selectedEvent.end).minutes }}min
+                  </span>
+                  <span v-else-if="getCountdown(selectedEvent.end).mode === 'days'" class="countdown-days">
+                    <i class="bi bi-calendar2 me-1" aria-hidden="true"></i>
+                    {{ getCountdown(selectedEvent.end).days }} day(s)
+                  </span>
+                  <span v-else-if="getCountdown(selectedEvent.end).mode === 'weeks'" class="countdown-weeks">
+                    <i class="bi bi-calendar-week me-1" aria-hidden="true"></i>
+                    {{ getCountdown(selectedEvent.end).weeks }} week(s)
+                    <span v-if="getCountdown(selectedEvent.end).days > 0">
+                      {{ getCountdown(selectedEvent.end).days }} day(s)
+                    </span>
+                  </span>
+                  <span v-else class="countdown-months">
+                    <i class="bi bi-calendar-month me-1" aria-hidden="true"></i>
+                    {{ getCountdown(selectedEvent.end).months }} month(s)
+                    <span v-if="getCountdown(selectedEvent.end).weeks > 0">
+                      {{ getCountdown(selectedEvent.end).weeks }} week(s)
+                    </span>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- DIFICULTAD -->
+            <div v-if="selectedEvent.difficulty" class="event-detail-row">
+              <i class="bi bi-bar-chart detail-icon" aria-hidden="true"></i>
+              <div>
+                <div class="detail-label">Difficulty</div>
+                <div class="detail-value">
+                  <span class="bdg" :class="'bdg-' + selectedEvent.difficulty">
+                    {{ selectedEvent.difficulty }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- FRECUENCIA -->
+            <div v-if="selectedEvent.frecuency" class="event-detail-row">
+              <i class="bi bi-arrow-repeat detail-icon" aria-hidden="true"></i>
+              <div>
+                <div class="detail-label">Frequency</div>
+                <div class="detail-value">
+                  <span class="bdg" :class="selectedEvent.frecuency === 'daily' ? 'bdg-daily' : selectedEvent.frecuency === 'weekly' ? 'bdg-weekly' : 'bdg-monthly'">
+                    {{ selectedEvent.frecuency }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- DESCRIPCIÓN -->
+            <div v-if="selectedEvent.descrip" class="event-detail-row">
+              <i class="bi bi-text-left detail-icon" aria-hidden="true"></i>
+              <div>
+                <div class="detail-label">Description</div>
+                <div class="detail-value">{{ selectedEvent.descrip }}</div>
+              </div>
+            </div>
+
+            <!-- ESTADO -->
+            <div class="event-detail-row">
+              <i class="bi detail-icon" :class="selectedEvent.done ? 'bi-check-circle-fill' : 'bi-circle'" aria-hidden="true"></i>
+              <div>
+                <div class="detail-label">Status</div>
+                <div class="detail-value">
+                  <span class="bdg" :class="selectedEvent.done ? 'bdg-done' : 'bdg-daily'">
+                    {{ selectedEvent.done ? 'Completed' : 'Pending' }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+    </div>
 
   </div>
 </template>
@@ -308,7 +302,7 @@ function getTypeIcon(type) {
 .calendar-container {
   width: 100%;
   padding: 2.5rem 3rem 5rem;
-  font-family: 'Atkinson Hyperlegible', var(--font-mono), sans-serif;
+  font-family: 'Atkinson Hyperlegible', sans-serif;
 }
 
 @media (max-width: 768px) {
@@ -330,13 +324,14 @@ function getTypeIcon(type) {
 }
 
 .dot-task    { background: var(--state-error); }
-.dot-habit   { background: var(--btn-info); }
-.dot-routine { background: var(--state-ok); }
+.dot-habit   { background: var(--cinnamon-mid); }
+.dot-routine { background: var(--btn-info); }
 
 .legend-label {
-  font-size: 0.85rem;
-  color: var(--cinnamon-mid);
   font-family: 'Atkinson Hyperlegible', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--cinnamon-mid);
 }
 
 /* CARD DEL CALENDARIO */
@@ -349,14 +344,11 @@ function getTypeIcon(type) {
 }
 
 /* ── OVERRIDE FULLCALENDAR ── */
-
-/* Tipografía accesible en todo el calendario */
 :deep(.fc) {
   font-family: 'Atkinson Hyperlegible', sans-serif !important;
   font-size: 1rem !important;
 }
 
-/* Cabecera del calendario (mes, botones prev/next) */
 :deep(.fc-toolbar-title) {
   font-family: 'Atkinson Hyperlegible', sans-serif !important;
   font-size: 1.3rem !important;
@@ -364,7 +356,6 @@ function getTypeIcon(type) {
   color: var(--cinnamon-dark) !important;
 }
 
-/* Botones prev/next/today/vistas */
 :deep(.fc-button) {
   background: var(--btn-primary) !important;
   border-color: var(--btn-primary) !important;
@@ -385,7 +376,6 @@ function getTypeIcon(type) {
   border-color: var(--cinnamon-mid) !important;
 }
 
-/* Nombres de los días (Mon, Tue...) */
 :deep(.fc-col-header-cell-cushion) {
   font-family: 'Atkinson Hyperlegible', sans-serif !important;
   font-size: 0.9rem !important;
@@ -395,7 +385,6 @@ function getTypeIcon(type) {
   text-decoration: none !important;
 }
 
-/* Números de día */
 :deep(.fc-daygrid-day-number) {
   font-family: 'Atkinson Hyperlegible', sans-serif !important;
   font-size: 0.95rem !important;
@@ -405,7 +394,6 @@ function getTypeIcon(type) {
   padding: 0.4rem !important;
 }
 
-/* Día actual resaltado */
 :deep(.fc-day-today) {
   background: var(--vanilla-light) !important;
   opacity: 1 !important;
@@ -422,7 +410,6 @@ function getTypeIcon(type) {
   justify-content: center !important;
 }
 
-/* Eventos en el calendario */
 :deep(.fc-event) {
   border-radius: 6px !important;
   border: none !important;
@@ -437,14 +424,12 @@ function getTypeIcon(type) {
   filter: brightness(0.9) !important;
 }
 
-/* Texto "more" cuando hay muchos eventos */
 :deep(.fc-daygrid-more-link) {
   font-size: 0.8rem !important;
   color: var(--cinnamon-mid) !important;
   font-family: 'Atkinson Hyperlegible', sans-serif !important;
 }
 
-/* Separadores de celdas */
 :deep(.fc-scrollgrid) {
   border-color: var(--vanilla-mid) !important;
 }
@@ -537,9 +522,10 @@ function getTypeIcon(type) {
   font-weight: 600;
   color: var(--cinnamon-dark);
 }
-.countdown-expired { color: var(--state-error); font-weight: 700; }
-.countdown-urgent  { color: var(--state-error); font-weight: 700; }
-.countdown-days    { color: var(--state-warn);  font-weight: 700; }
+
+.countdown-expired { color: var(--state-error);  font-weight: 700; }
+.countdown-urgent  { color: var(--state-error);  font-weight: 700; }
+.countdown-days    { color: var(--state-warn);   font-weight: 700; }
 .countdown-weeks   { color: var(--cinnamon-mid); font-weight: 700; }
-.countdown-months  { color: var(--state-ok);    font-weight: 700; }
+.countdown-months  { color: var(--state-ok);     font-weight: 700; }
 </style>

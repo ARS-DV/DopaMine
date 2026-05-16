@@ -18,7 +18,7 @@ if ($method === 'GET') {
 
     // Verificar que el solicitante es admin
     $requester_id = intval($_GET['requester_id']);
-    $check = $conn->prepare("SELECT role FROM users WHERE id = ?");
+    $check = $conn->prepare("SELECT role FROM user WHERE id = ?");
     $check->bind_param("i", $requester_id);
     $check->execute();
     $requester = $check->get_result()->fetch_assoc();
@@ -31,7 +31,7 @@ if ($method === 'GET') {
     }
 
     // Obtener todos los usuarios
-    $stmt = $conn->prepare("SELECT id, nickName, email, role, createdDate FROM users ORDER BY createdDate DESC");
+    $stmt = $conn->prepare("SELECT id, nickName, email, role, createdDate FROM user ORDER BY createdDate DESC");
     $stmt->execute();
     $result = $stmt->get_result();
     $users  = [];
@@ -84,7 +84,7 @@ if ($method === 'PATCH') {
     }
 
     // Verificar que el solicitante es admin
-    $check = $conn->prepare("SELECT role FROM users WHERE id = ?");
+    $check = $conn->prepare("SELECT role FROM user WHERE id = ?");
     $check->bind_param("i", $requester_id);
     $check->execute();
     $requester = $check->get_result()->fetch_assoc();
@@ -102,7 +102,7 @@ if ($method === 'PATCH') {
         exit;
     }
 
-    $stmt = $conn->prepare("UPDATE users SET role = ? WHERE id = ?");
+    $stmt = $conn->prepare("UPDATE user SET role = ? WHERE id = ?");
     $stmt->bind_param("si", $new_role, $target_id);
 
     if ($stmt->execute()) {
@@ -122,7 +122,7 @@ if ($method === 'DELETE') {
     $requester_id = intval($data['requester_id']);
 
     // Verificar que el solicitante es admin
-    $check = $conn->prepare("SELECT role FROM users WHERE id = ?");
+    $check = $conn->prepare("SELECT role FROM user WHERE id = ?");
     $check->bind_param("i", $requester_id);
     $check->execute();
     $requester = $check->get_result()->fetch_assoc();
@@ -141,7 +141,7 @@ if ($method === 'DELETE') {
     }
 
     // El CASCADE de las FK se encarga de borrar hábitos, tareas, rutinas, etc.
-    $stmt = $conn->prepare("DELETE FROM users WHERE id = ?");
+    $stmt = $conn->prepare("DELETE FROM user WHERE id = ?");
     $stmt->bind_param("i", $target_id);
 
     if ($stmt->execute()) {
