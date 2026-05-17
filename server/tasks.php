@@ -103,17 +103,20 @@ if ($method === 'POST') {
     $data       = json_decode(file_get_contents('php://input'), true);
     $user_id    = intval($data['user_id']);
     $title      = $data['title'];
+    $icon       = isset($data['icon'])       ? $data['icon']       : null;
     $descrip    = isset($data['descrip'])    ? $data['descrip']    : null;
     $startDate  = isset($data['startDate'])  ? $data['startDate']  : null;
     $difficulty = isset($data['difficulty']) ? $data['difficulty'] : 'medium';
     $expDate    = $data['expDate'];
     $url        = isset($data['url'])        ? $data['url']        : null;
+    $url2       = isset($data['url2'])       ? $data['url2']       : null;
+    $url3       = isset($data['url3'])       ? $data['url3']       : null;
 
     $stmt = $conn->prepare(
-        "INSERT INTO task (user_id, title, descrip, startDate, difficulty, expDate, url)
-         VALUES (?, ?, ?, ?, ?, ?, ?)"
+        "INSERT INTO task (user_id, title, icon, descrip, startDate, difficulty, expDate, url, url2, url3)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
     );
-    $stmt->bind_param("issssss", $user_id, $title, $descrip, $startDate, $difficulty, $expDate, $url);
+    $stmt->bind_param("isssssssss", $user_id, $title, $icon, $descrip, $startDate, $difficulty, $expDate, $url, $url2, $url3);
 
     if ($stmt->execute()) {
         $id = $conn->insert_id;
@@ -131,17 +134,20 @@ if ($method === 'PUT') {
     $id         = intval($_GET['id']);
     $data       = json_decode(file_get_contents('php://input'), true);
     $title      = $data['title'];
+    $icon       = isset($data['icon'])       ? $data['icon']       : null;
     $descrip    = isset($data['descrip'])    ? $data['descrip']    : null;
     $startDate  = isset($data['startDate'])  ? $data['startDate']  : null;
     $difficulty = isset($data['difficulty']) ? $data['difficulty'] : 'medium';
     $expDate    = $data['expDate'];
     $url        = isset($data['url'])        ? $data['url']        : null;
+    $url2       = isset($data['url2'])       ? $data['url2']       : null;
+    $url3       = isset($data['url3'])       ? $data['url3']       : null;
 
     $stmt = $conn->prepare(
-        "UPDATE task SET title = ?, descrip = ?, startDate = ?, difficulty = ?, expDate = ?, url = ?
-         WHERE id = ?"
+        "UPDATE task SET title=?, icon=?, descrip=?, startDate=?, difficulty=?, expDate=?, url=?, url2=?, url3=?
+         WHERE id=?"
     );
-    $stmt->bind_param("ssssssi", $title, $descrip, $startDate, $difficulty, $expDate, $url, $id);
+    $stmt->bind_param("sssssssssi", $title, $icon, $descrip, $startDate, $difficulty, $expDate, $url, $url2, $url3, $id);
 
     if ($stmt->execute()) {
         echo json_encode(['status' => 'success', 'message' => 'Task updated']);

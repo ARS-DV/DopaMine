@@ -24,9 +24,6 @@ const daysList = [
   "friday", "saturday", "sunday"
 ];
 
-//array con emojis
-const emojis = ["🔄", "💧", "🏃", "📚", "🧘", "🥗", "💊", "🛌", "🧹", "💼"];
-
 //funcion para seleccionar o desmarcar dias
 function selectDay(day) {
   let position = selectedDays.value.indexOf(day);
@@ -93,7 +90,7 @@ async function saveHabit() {
 
       <!-- PAN DE MIGA -->
       <nav class="breadcrumb-dopamine breadcrumb-visible mb-4 fade-up" aria-label="Breadcrumb navigation">
-        <RouterLink to="/"><i class="bi bi-house me-1" aria-hidden="true"></i>Home</RouterLink>
+        <RouterLink to="/home"><i class="bi bi-house me-1" aria-hidden="true"></i>Home</RouterLink>
         <span class="separator" aria-hidden="true"><i class="bi bi-chevron-right"></i></span>
         <RouterLink to="/habits">Habits</RouterLink>
         <span class="separator" aria-hidden="true"><i class="bi bi-chevron-right"></i></span>
@@ -128,8 +125,10 @@ async function saveHabit() {
             type="text"
             class="form-control dopamine-input input-lg"
             placeholder="e.g. Drink water, Read 10 min..."
+            maxlength="200"
             aria-required="true"
           >
+          <p class="char-hint text-end mt-1" aria-live="polite">{{ title.length }}/200</p>
         </div>
 
         <!-- DESCRIPCIÓN -->
@@ -143,31 +142,33 @@ async function saveHabit() {
             type="text"
             class="form-control dopamine-input input-lg"
             placeholder="Add more details..."
+            maxlength="500"
           >
         </div>
 
-        <!-- SELECTOR DE ICONO -->
+        <!-- ICONO — input libre con hint de emoji picker -->
         <div class="form-section">
-          <label class="form-label-accessible mb-3" id="icon-label">
+          <label for="habit-icon" class="form-label-accessible">
             <i class="bi bi-emoji-smile me-2" aria-hidden="true"></i>Icon
           </label>
-          <div class="emoji-grid" role="group" aria-labelledby="icon-label">
-            <button
-              v-for="e in emojis"
-              :key="e"
-              type="button"
-              class="emoji-btn"
-              :class="icon == e ? 'emoji-btn-selected' : ''"
-              :aria-label="'Select icon ' + e"
-              :aria-pressed="icon == e"
-              @click="icon = e"
-            >
-              {{ e }}
-            </button>
-          </div>
-          <div v-if="icon" class="emoji-selected-preview mt-3" aria-live="polite">
-            <span class="emoji-preview-icon" aria-hidden="true">{{ icon }}</span>
-            <span class="emoji-preview-text">Selected icon</span>
+          <input
+            id="habit-icon"
+            v-model="icon"
+            type="text"
+            class="form-control dopamine-input input-lg icon-input"
+            placeholder="e.g. 💧"
+            maxlength="4"
+            aria-describedby="habit-icon-hint"
+          >
+          <p id="habit-icon-hint" class="field-hint mt-2">
+            <i class="bi bi-keyboard me-1" aria-hidden="true"></i>
+            <strong>Windows:</strong> press <kbd>Win + .</kbd> &nbsp;·&nbsp;
+            <strong>Mac:</strong> press <kbd>Cmd + Ctrl + Space</kbd> to open the emoji picker
+          </p>
+          <!-- preview del icono seleccionado -->
+          <div v-if="icon" class="icon-preview mt-2" aria-live="polite">
+            <span class="icon-preview-emoji" aria-hidden="true">{{ icon }}</span>
+            <span class="icon-preview-text">Selected icon</span>
           </div>
         </div>
 
@@ -181,9 +182,7 @@ async function saveHabit() {
               <div
                 class="freq-btn"
                 :class="frecuency === 'daily' ? 'freq-btn-daily' : ''"
-                role="radio"
-                :aria-checked="frecuency === 'daily'"
-                tabindex="0"
+                role="radio" :aria-checked="frecuency === 'daily'" tabindex="0"
                 @click="frecuency = 'daily'"
                 @keydown.enter="frecuency = 'daily'"
                 @keydown.space.prevent="frecuency = 'daily'"
@@ -196,9 +195,7 @@ async function saveHabit() {
               <div
                 class="freq-btn"
                 :class="frecuency === 'weekly' ? 'freq-btn-weekly' : ''"
-                role="radio"
-                :aria-checked="frecuency === 'weekly'"
-                tabindex="0"
+                role="radio" :aria-checked="frecuency === 'weekly'" tabindex="0"
                 @click="frecuency = 'weekly'"
                 @keydown.enter="frecuency = 'weekly'"
                 @keydown.space.prevent="frecuency = 'weekly'"
@@ -211,9 +208,7 @@ async function saveHabit() {
               <div
                 class="freq-btn"
                 :class="frecuency === 'monthly' ? 'freq-btn-monthly' : ''"
-                role="radio"
-                :aria-checked="frecuency === 'monthly'"
-                tabindex="0"
+                role="radio" :aria-checked="frecuency === 'monthly'" tabindex="0"
                 @click="frecuency = 'monthly'"
                 @keydown.enter="frecuency = 'monthly'"
                 @keydown.space.prevent="frecuency = 'monthly'"
@@ -319,140 +314,35 @@ async function saveHabit() {
   font-family: 'Atkinson Hyperlegible', sans-serif;
 }
 
-.newhabit-container {
-  max-width: 720px;
-  margin: 0 auto;
-}
+.newhabit-container { max-width: 720px; margin: 0 auto; }
 
-@media (max-width: 768px) {
-  .newhabit-wrapper { padding: 1.5rem 1rem 4rem; }
-}
+@media (max-width: 768px) { .newhabit-wrapper { padding: 1.5rem 1rem 4rem; } }
 
-/* SECCIONES */
-.form-section {
-  background: var(--bg-card);
-  border: 1.5px solid var(--vanilla-mid);
-  border-radius: 12px;
-  padding: 1.2rem 1.3rem;
-}
+.form-section { background: var(--bg-card); border: 1.5px solid var(--vanilla-mid); border-radius: 12px; padding: 1.2rem 1.3rem; }
 
-/* BREADCRUMB VISIBLE */
-.breadcrumb-visible {
-  font-size: 1rem !important;
-  font-weight: 600 !important;
-  background: var(--bg-card);
-  border: 1.5px solid var(--vanilla-mid);
-  border-radius: 10px;
-  padding: 0.7rem 1rem !important;
-}
-
-.breadcrumb-visible a {
-  color: var(--cinnamon-mid) !important;
-  font-weight: 700 !important;
-  font-size: 1rem !important;
-}
-
-.breadcrumb-visible .current {
-  color: var(--cinnamon-dark) !important;
-  font-weight: 700 !important;
-}
-
+.breadcrumb-visible { font-size: 1rem !important; font-weight: 600 !important; background: var(--bg-card); border: 1.5px solid var(--vanilla-mid); border-radius: 10px; padding: 0.7rem 1rem !important; }
+.breadcrumb-visible a        { color: var(--cinnamon-mid) !important; font-weight: 700 !important; font-size: 1rem !important; }
+.breadcrumb-visible .current { color: var(--cinnamon-dark) !important; font-weight: 700 !important; }
 .breadcrumb-visible .separator { color: var(--vanilla-mid) !important; }
 
-/* LABELS */
-.form-label-accessible {
-  font-family: 'Atkinson Hyperlegible', sans-serif;
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--cinnamon-dark);
-  display: flex;
-  align-items: center;
-  margin-bottom: 0.5rem;
-}
-
+.form-label-accessible { font-family: 'Atkinson Hyperlegible', sans-serif; font-size: 1rem; font-weight: 700; color: var(--cinnamon-dark); display: flex; align-items: center; margin-bottom: 0.5rem; }
 .required-star { color: var(--state-error); font-weight: 700; }
-.field-hint { font-size: 0.82rem; color: var(--cinnamon-soft); margin: 0; }
+.field-hint    { font-size: 0.82rem; color: var(--cinnamon-soft); margin: 0; }
+.char-hint     { font-size: 0.72rem; color: var(--cinnamon-soft); margin: 0; }
 
-/* INPUT GRANDE */
-.input-lg {
-  font-size: 1rem !important;
-  padding: 0.7rem 0.9rem !important;
-  min-height: 48px !important;
-}
+.input-lg   { font-size: 1rem !important; padding: 0.7rem 0.9rem !important; min-height: 48px !important; }
+.input-date { font-size: 0.95rem !important; padding: 0.65rem 0.7rem !important; min-height: 48px !important; }
 
-.input-date {
-  font-size: 0.95rem !important;
-  padding: 0.65rem 0.7rem !important;
-  min-height: 48px !important;
-}
+/* ICONO — input libre */
+.icon-input { font-size: 1.4rem !important; max-width: 120px; }
 
-/* SELECTOR EMOJI */
-.emoji-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
+kbd { font-family: 'Atkinson Hyperlegible', sans-serif; font-size: 0.78rem; background: var(--bg-subtle); border: 1px solid var(--vanilla-mid); border-radius: 4px; padding: 0.1rem 0.4rem; color: var(--cinnamon-dark); box-shadow: 0 1px 0 var(--vanilla-mid); }
 
-.emoji-btn {
-  width: 52px;
-  height: 52px;
-  font-size: 1.4rem;
-  border-radius: 10px;
-  border: 2px solid var(--vanilla-light);
-  background: var(--bg-subtle);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.15s;
-}
+.icon-preview { display: flex; align-items: center; gap: 0.6rem; padding: 0.5rem 0.8rem; background: var(--bg-subtle); border-radius: 8px; border: 1px solid var(--vanilla-light); width: fit-content; }
+.icon-preview-emoji { font-size: 1.3rem; }
+.icon-preview-text  { font-family: 'Atkinson Hyperlegible', sans-serif; font-size: 0.82rem; color: var(--cinnamon-soft); font-weight: 600; }
 
-.emoji-btn:hover {
-  border-color: var(--vanilla-mid);
-  background: var(--vanilla-light);
-  transform: scale(1.08);
-}
-
-.emoji-btn:focus-visible {
-  outline: 3px solid var(--cinnamon-mid);
-  outline-offset: 3px;
-}
-
-.emoji-btn-selected {
-  border-color: var(--cinnamon-mid) !important;
-  background: var(--vanilla-light) !important;
-  box-shadow: 0 0 0 3px rgba(139, 94, 60, 0.2);
-}
-
-.emoji-selected-preview {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  padding: 0.5rem 0.8rem;
-  background: var(--bg-subtle);
-  border-radius: 8px;
-  border: 1px solid var(--vanilla-light);
-  width: fit-content;
-}
-
-.emoji-preview-icon  { font-size: 1.3rem; }
-.emoji-preview-text  { font-size: 0.82rem; color: var(--cinnamon-soft); font-weight: 600; }
-
-/* BOTONES DE FRECUENCIA */
-.freq-btn {
-  text-align: center;
-  padding: 0.9rem 0.5rem;
-  cursor: pointer;
-  font-family: 'Atkinson Hyperlegible', sans-serif;
-  font-size: 0.9rem;
-  font-weight: 700;
-  border-radius: 8px;
-  border: 1.5px solid var(--vanilla-mid);
-  background: var(--bg-subtle);
-  color: var(--cinnamon-mid);
-  transition: all 0.15s;
-}
-
+.freq-btn { text-align: center; padding: 0.9rem 0.5rem; cursor: pointer; font-family: 'Atkinson Hyperlegible', sans-serif; font-size: 0.9rem; font-weight: 700; border-radius: 8px; border: 1.5px solid var(--vanilla-mid); background: var(--bg-subtle); color: var(--cinnamon-mid); transition: all 0.15s; }
 .freq-btn:hover           { background: var(--vanilla-light); }
 .freq-btn:focus-visible   { outline: 3px solid var(--cinnamon-mid); outline-offset: 2px; }
 .freq-btn-icon            { font-size: 1.3rem; }
@@ -460,47 +350,15 @@ async function saveHabit() {
 .freq-btn-weekly  { background: var(--state-info-bg);  border-color: var(--btn-info);     color: #2A5068; }
 .freq-btn-monthly { background: var(--vanilla-light);  border-color: var(--vanilla-deep); color: var(--cinnamon-dark); }
 
-/* COLORES POR FRECUENCIA */
 .text-weekly  { color: #2A5068; }
 .text-monthly { color: var(--vanilla-deep); }
 
-/* SELECTOR DE DÍAS */
-.days-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.day-btn {
-  min-width: 52px;
-  height: 52px;
-  border-radius: 10px;
-  border: 2px solid var(--vanilla-light);
-  background: var(--bg-subtle);
-  color: var(--cinnamon-mid);
-  font-family: 'Atkinson Hyperlegible', sans-serif;
-  font-size: 0.82rem;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.15s;
-  padding: 0 0.6rem;
-  user-select: none;
-}
-
+.days-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.day-btn { min-width: 52px; height: 52px; border-radius: 10px; border: 2px solid var(--vanilla-light); background: var(--bg-subtle); color: var(--cinnamon-mid); font-family: 'Atkinson Hyperlegible', sans-serif; font-size: 0.82rem; font-weight: 700; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.15s; padding: 0 0.6rem; user-select: none; }
 .day-btn:hover        { border-color: var(--btn-info); background: var(--state-info-bg); color: #2A5068; }
 .day-btn:focus-visible { outline: 3px solid var(--btn-info); outline-offset: 2px; }
 .day-btn-selected     { background: var(--btn-info) !important; border-color: var(--btn-info) !important; color: #fff !important; }
 .days-hint            { font-size: 0.82rem; color: var(--cinnamon-soft); margin: 0.6rem 0 0; }
 
-/* BOTONES ACCIÓN */
-.form-action-btn {
-  font-family: 'Atkinson Hyperlegible', sans-serif;
-  font-size: 1rem;
-  font-weight: 700;
-  min-height: 48px;
-  padding: 0.7rem 1.5rem;
-}
+.form-action-btn { font-family: 'Atkinson Hyperlegible', sans-serif; font-size: 1rem; font-weight: 700; min-height: 48px; padding: 0.7rem 1.5rem; }
 </style>
