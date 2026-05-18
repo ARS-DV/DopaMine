@@ -1,23 +1,28 @@
 <script setup>
-import { ref } from "vue";
-import { useRouter } from "vue-router";
+import { ref, onMounted } from "vue";
+import { useRouter, useRoute } from "vue-router";
 import { useUserStore } from "@/stores/userStore";
 import { rutaApi } from "@/config.js";
 
 const userStore = useUserStore();
 const router = useRouter();
+const route = useRoute();
+const habitId = route.params.id;
+
+//variables de estado de la vista
+const loading = ref(true);
+const errorMessage = ref("");
 
 //variables del formulario
-const title = ref("");
-const description = ref("");
-const icon = ref("");
+const titleInput = ref("");
+const descripInput = ref("");
+const iconInput = ref("");
 const frecuency = ref("daily");
 const dayOfMonth = ref(null);
 const selectedDays = ref([]);
-const error = ref("");
 
-//lista de dias de la semana para el selector
-const daysList = [
+//lista de dias de la semana
+const weekDaysList = [
   "monday",
   "tuesday",
   "wednesday",
@@ -27,47 +32,73 @@ const daysList = [
   "sunday",
 ];
 
-//funcion para seleccionar o desmarcar un dia de la semana
-function selectDay(day) {
-  let position = selectedDays.value.indexOf(day);
+//funcion para cargar los datos del habito a editar
+function loadHabitData() {
+  loading.value = true;
 
-  if (position == -1) {
-    //si no esta en el array, lo añadimos
+  fetch(rutaApi + "?entity=habits&id=" + habitId)
+    .then(function (res) {
+      return res.json();
+    })
+    .then(function (data) {
+      if (!data || data.status === "error") {
+        errorMessage.value = "Habit not found";
+        loading.value = false;
+        return;
+      }
+
+      //rellenamos los campos con los datos existentes
+      titleInput.value = data.title || "";
+      descripInput.value = data.descrip || "";
+      iconInput.value = data.icon || "";
+      frecuency.value = data.frecuency || "daily";
+      dayOfMonth.value = data.dayOfMonth || null;
+      selectedDays.value = data.days || [];
+      loading.value = false;
+    })
+    .catch(function () {
+      errorMessage.value = "Error loading habit";
+      loading.value = false;
+    });
+}
+
+//funcion para marcar o desmarcar un dia de la semana
+function toggleDay(day) {
+  let index = selectedDays.value.indexOf(day);
+  if (index === -1) {
     selectedDays.value.push(day);
   } else {
-    //si ya esta, lo quitamos
-    selectedDays.value.splice(position, 1);
+    selectedDays.value.splice(index, 1);
   }
 }
 
-//funcion principal para guardar el habito
-function saveHabit() {
-  error.value = "";
+//funcion principal para guardar los cambios
+function updateHabit() {
+  errorMessage.value = "";
 
   //validaciones basicas
-  if (title.value == "") {
-    error.value = "Title is required";
+  if (titleInput.value.trim() === "") {
+    errorMessage.value = "Title is required";
     return;
   }
-  if (frecuency.value == "weekly" && selectedDays.value.length == 0) {
-    error.value = "You must choose a day of the week";
+  if (frecuency.value === "weekly" && selectedDays.value.length === 0) {
+    errorMessage.value = "Select at least one day";
     return;
   }
 
-  //objeto con los datos para enviar al backend
+  //objeto con los datos actualizados para enviar
   let habitData = {
-    user_id: userStore.user.id,
-    title: title.value,
-    descrip: description.value,
-    icon: icon.value,
+    title: titleInput.value.trim(),
+    descrip: descripInput.value || null,
+    icon: iconInput.value || null,
     frecuency: frecuency.value,
-    dayOfMonth: frecuency.value == "monthly" ? dayOfMonth.value : null,
-    days: frecuency.value == "weekly" ? selectedDays.value : [],
+    dayOfMonth: frecuency.value === "monthly" ? dayOfMonth.value : null,
+    days: frecuency.value === "weekly" ? selectedDays.value : [],
   };
 
-  //peticion post para guardar el habito
-  fetch(rutaApi + "?entity=habits", {
-    method: "POST",
+  //peticion put para actualizar el habito
+  fetch(rutaApi + "?entity=habits&id=" + habitId, {
+    method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(habitData),
   })
@@ -78,68 +109,80 @@ function saveHabit() {
       if (data.status === "success") {
         router.push("/habits");
       } else {
-        error.value = "Error: " + data.message;
+        errorMessage.value = data.message || "Error updating habit";
       }
     })
-    .catch(function (err) {
-      error.value = "Connection error";
+    .catch(function () {
+      errorMessage.value = "Connection error";
     });
 }
+
+//cuando carga la vista, se buscan los datos del habito
+onMounted(function () {
+  loadHabitData();
+});
 </script>
 
 <template>
-  <div class="newhabit-wrapper">
-    <div class="newhabit-container">
+  <div class="edithabit-wrapper">
+    <div class="edithabit-container">
       <!-- miga de pan -->
       <nav class="breadcrumb-dopamine breadcrumb-visible mb-4 fade-up">
         <RouterLink to="/home"><i class="bi bi-house me-1"></i>Home</RouterLink>
         <span class="separator"><i class="bi bi-chevron-right"></i></span>
         <RouterLink to="/habits">Habits</RouterLink>
         <span class="separator"><i class="bi bi-chevron-right"></i></span>
-        <span class="current">New Habit</span>
+        <span class="current">Edit Habit</span>
       </nav>
 
       <!-- cabecera -->
       <div class="mb-4 fade-up delay-1">
-        <h1 class="page-title"><em>start a new</em> Habit</h1>
+        <h1 class="page-title"><em>editing a</em> Habit</h1>
+      </div>
+
+      <!-- spinner mientras carga -->
+      <div v-if="loading" class="loading-text">
+        <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+        Loading habit...
       </div>
 
       <!-- mensaje de error -->
-      <div v-if="error" class="error-text mb-4" role="alert">
+      <div v-if="errorMessage" class="error-text mb-4" role="alert">
         <i class="bi bi-exclamation-triangle me-2"></i>
-        <strong>{{ error }}</strong>
+        <strong>{{ errorMessage }}</strong>
       </div>
 
-      <!-- formulario -->
+      <!-- formulario, solo visible cuando termina de cargar -->
       <form
-        @submit.prevent="saveHabit"
+        v-if="!loading"
+        @submit.prevent="updateHabit"
         class="d-flex flex-column gap-4 fade-up delay-2"
         novalidate
       >
         <!-- nombre del habito -->
         <div class="form-section">
-          <label for="habit-title" class="auth-label">
+          <label for="edit-title" class="auth-label">
             <i class="bi bi-pencil me-2"></i>Habit name *
           </label>
           <input
-            id="habit-title"
-            v-model="title"
+            id="edit-title"
+            v-model="titleInput"
             type="text"
             class="form-control dopamine-input input-lg"
             placeholder="e.g. Drink water, Read 10 min..."
             maxlength="200"
           />
-          <p class="char-hint text-end mt-1">{{ title.length }}/200</p>
+          <p class="char-hint text-end mt-1">{{ titleInput.length }}/200</p>
         </div>
 
         <!-- descripcion opcional -->
         <div class="form-section">
-          <label for="habit-descrip" class="auth-label">
+          <label for="edit-descrip" class="auth-label">
             <i class="bi bi-text-left me-2"></i>Description
           </label>
           <input
-            id="habit-descrip"
-            v-model="description"
+            id="edit-descrip"
+            v-model="descripInput"
             type="text"
             class="form-control dopamine-input input-lg"
             placeholder="Add more details..."
@@ -149,12 +192,12 @@ function saveHabit() {
 
         <!-- icono con picker nativo del sistema -->
         <div class="form-section">
-          <label for="habit-icon" class="auth-label">
+          <label for="edit-icon" class="auth-label">
             <i class="bi bi-emoji-smile me-2"></i>Icon
           </label>
           <input
-            id="habit-icon"
-            v-model="icon"
+            id="edit-icon"
+            v-model="iconInput"
             type="text"
             class="form-control dopamine-input input-lg icon-input"
             placeholder="e.g. 💧"
@@ -165,9 +208,9 @@ function saveHabit() {
             <strong>Windows:</strong> <kbd>Win + .</kbd> &nbsp;·&nbsp;
             <strong>Mac:</strong> <kbd>Cmd + Ctrl + Space</kbd>
           </p>
-          <!-- preview del icono seleccionado -->
-          <div v-if="icon" class="icon-preview mt-2">
-            <span class="icon-preview-emoji">{{ icon }}</span>
+          <!-- preview del icono -->
+          <div v-if="iconInput" class="icon-preview mt-2">
+            <span class="icon-preview-emoji">{{ iconInput }}</span>
             <span class="icon-preview-text">Selected icon</span>
           </div>
         </div>
@@ -216,19 +259,19 @@ function saveHabit() {
           </select>
         </div>
 
-        <!-- selector de dias si es semanal -->
-        <div v-if="frecuency == 'weekly'" class="form-section fade-up">
+        <!-- dias de la semana si es semanal -->
+        <div v-if="frecuency === 'weekly'" class="form-section fade-up">
           <label class="auth-label mb-3">
             <i class="bi bi-calendar-week me-2 text-weekly"></i>
             <span class="text-weekly">Days of the week *</span>
           </label>
           <div class="days-grid">
             <div
-              v-for="day in daysList"
+              v-for="day in weekDaysList"
               :key="day"
               class="day-btn"
               :class="selectedDays.includes(day) ? 'day-btn-selected' : ''"
-              @click="selectDay(day)"
+              @click="toggleDay(day)"
             >
               {{ day.slice(0, 3).toUpperCase() }}
             </div>
@@ -236,15 +279,15 @@ function saveHabit() {
           <p class="days-hint">{{ selectedDays.length }} day(s) selected</p>
         </div>
 
-        <!-- selector de dia del mes si es mensual -->
-        <div v-if="frecuency == 'monthly'" class="form-section fade-up">
-          <label for="habit-dayofmonth" class="auth-label mb-2">
+        <!-- dia del mes si es mensual -->
+        <div v-if="frecuency === 'monthly'" class="form-section fade-up">
+          <label for="edit-dayofmonth" class="auth-label mb-2">
             <i class="bi bi-calendar-event me-2 text-monthly"></i>
             <span class="text-monthly">Day of the month *</span>
           </label>
           <p class="field-hint mb-2">Between 1 and 31</p>
           <input
-            id="habit-dayofmonth"
+            id="edit-dayofmonth"
             v-model="dayOfMonth"
             type="number"
             min="1"
@@ -261,7 +304,7 @@ function saveHabit() {
             type="submit"
             class="btn-dopamine btn-dopamine-primary form-action-btn"
           >
-            <i class="bi bi-check2 me-2"></i> Create Habit
+            <i class="bi bi-check2 me-2"></i> Save Changes
           </button>
           <button
             type="button"
@@ -278,18 +321,18 @@ function saveHabit() {
 
 <style scoped>
 /* contenedor y centrado */
-.newhabit-wrapper {
+.edithabit-wrapper {
   min-height: 100vh;
   background-color: var(--bg-subtle);
   padding: 2.5rem 1.5rem 5rem;
   font-family: "Atkinson Hyperlegible", sans-serif;
 }
-.newhabit-container {
+.edithabit-container {
   max-width: 720px;
   margin: 0 auto;
 }
 @media (max-width: 768px) {
-  .newhabit-wrapper {
+  .edithabit-wrapper {
     padding: 1.5rem 1rem 4rem;
   }
 }
@@ -417,7 +460,7 @@ function saveHabit() {
   color: var(--cinnamon-dark);
 }
 
-/* colores de etiquetas de frecuencia */
+/* colores de etiquetas */
 .text-weekly {
   color: #2a5068;
 }
@@ -425,7 +468,7 @@ function saveHabit() {
   color: var(--vanilla-deep);
 }
 
-/* selector de dias de la semana */
+/* selector de dias */
 .days-grid {
   display: flex;
   flex-wrap: wrap;

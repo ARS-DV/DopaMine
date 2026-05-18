@@ -69,7 +69,7 @@ const initials = computed(function() {
           aria-hidden="true"
           onerror="this.style.display='none'"
         >
-        Dopa<em>Mine</em>
+        DopaMine
       </RouterLink>
 
       <!-- ── DESKTOP NAV (oculto en móvil) ── -->

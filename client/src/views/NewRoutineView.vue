@@ -1,116 +1,140 @@
 <script setup>
-// imports para Vue, router y API
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { useUserStore } from '@/stores/userStore'
-import { rutaApi } from '@/config.js'
+//imports para vue, router y api
+import { ref } from "vue";
+import { useRouter } from "vue-router";
+import { useUserStore } from "@/stores/userStore";
+import { rutaApi } from "@/config.js";
 
-const userStore = useUserStore()
-const router    = useRouter()
+const userStore = useUserStore();
+const router = useRouter();
 
 //variables reactivas
-const routineTitle      = ref('')
-const routineDescrip    = ref('')
-const routineIcon       = ref('')
-const routineHour       = ref('')
-const routineFrecuency  = ref('daily')
-const routineDayOfMonth = ref(null)
-const routineDays       = ref([])
+const routineTitle = ref("");
+const routineDescrip = ref("");
+const routineIcon = ref("");
+const routineHour = ref("");
+const routineFrecuency = ref("daily");
+const routineDayOfMonth = ref(null);
+const routineDays = ref([]);
 
-const errorMessage = ref('')
-const weekDaysList = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday']
+const errorMessage = ref("");
+const weekDaysList = [
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday",
+  "sunday",
+];
 
 //variables para nuevos pasos
-const routineSteps  = ref([])
-const stepInputText = ref('')
+const routineSteps = ref([]);
+const stepInputText = ref("");
 
-//funciones para manejar los arrays de seleccion
+//funciones para manejar los dias de la semana
 function toggleDaySelection(day) {
-  let index = routineDays.value.indexOf(day)
+  let index = routineDays.value.indexOf(day);
   if (index == -1) {
-    routineDays.value.push(day)
+    routineDays.value.push(day);
   } else {
-    routineDays.value.splice(index, 1)
+    routineDays.value.splice(index, 1);
   }
 }
 
-//funcion para añadir nuevos pasos
+//funcion para añadir nuevos pasos a la lista
 async function addNewStep() {
-  if (stepInputText.value.trim() == "") return
-  routineSteps.value.push({ title: stepInputText.value.trim() })
-  stepInputText.value = ''
+  if (stepInputText.value.trim() == "") return;
+  routineSteps.value.push({ title: stepInputText.value.trim() });
+  stepInputText.value = "";
 }
 
-//funcion para borrar pasos
+//funcion para borrar pasos de la lista
 function deleteStep(index) {
-  routineSteps.value.splice(index, 1)
+  routineSteps.value.splice(index, 1);
 }
 
-//funcion para guardar la rutina
-function saveRoutine() {
-  errorMessage.value = ''
+//funcion para guardar la rutina entera
+async function saveRoutine() {
+  errorMessage.value = "";
 
-  //validaciones basicas para rutinas
-  if (routineTitle.value == '') {
-    errorMessage.value = 'Title is required'
-    return
+  //validaciones
+  if (routineTitle.value == "") {
+    errorMessage.value = "Title is required";
+    return;
   }
-  if (routineFrecuency.value == 'weekly' && routineDays.value.length == 0) {
-    errorMessage.value = 'Select at least one day'
-    return
+  if (routineFrecuency.value == "weekly" && routineDays.value.length == 0) {
+    errorMessage.value = "Select at least one day";
+    return;
   }
 
-  //recorremos un array y guardamos los pasos
-  let finalSteps = []
+  //se recorre el array para guardar los titulos
+  let finalSteps = [];
   for (let i = 0; i < routineSteps.value.length; i++) {
-    finalSteps.push(routineSteps.value[i].title)
+    finalSteps.push(routineSteps.value[i].title);
   }
 
-  //variable para guardar objeto para el backend
+  let dayOfMonthValue = null;
+  if (routineFrecuency.value == "monthly") {
+    dayOfMonthValue = routineDayOfMonth.value;
+  }
+
+  let daysValue = [];
+  if (routineFrecuency.value == "weekly") {
+    daysValue = routineDays.value;
+  }
+
+  //objeto de datos para enviar al backend
   let routineData = {
-    user_id:    userStore.user.id,
-    title:      routineTitle.value,
-    descrip:    routineDescrip.value,
-    icon:       routineIcon.value || null,
-    hour:       routineHour.value,
-    color:      '#6B8FA3',
-    frecuency:  routineFrecuency.value,
-    dayOfMonth: routineFrecuency.value == 'monthly' ? routineDayOfMonth.value : null,
-    days:       routineFrecuency.value == 'weekly' ? routineDays.value : [],
-    steps:      finalSteps
-  }
+    user_id: userStore.user.id,
+    title: routineTitle.value,
+    descrip: routineDescrip.value,
+    icon: routineIcon.value || null,
+    hour: routineHour.value,
+    color: "#6B8FA3",
+    frecuency: routineFrecuency.value,
+    dayOfMonth: dayOfMonthValue,
+    days: daysValue,
+    steps: finalSteps,
+  };
 
-  //fetch post para guardar la nueva rutina
+  //peticion post para guardar la rutina
   fetch(rutaApi + "?entity=routines", {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(routineData)
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(routineData),
   })
-  .then(res => res.json())
-  .then(data => {
-    if (data.status === 'success') {
-      router.push('/routines')
-    } else {
-      errorMessage.value = 'Error creating routine'
-    }
-  })
+    .then((res) => res.json())
+    .then((data) => {
+      if (data.status === "success") {
+        router.push("/routines");
+      } else {
+        errorMessage.value = "Error creating routine";
+      }
+    });
 }
 </script>
 
 <template>
   <div class="newroutine-wrapper">
     <div class="newroutine-container">
-
-      <!-- PAN DE MIGA -->
-      <nav class="breadcrumb-dopamine breadcrumb-visible mb-4 fade-up" aria-label="Breadcrumb navigation">
-        <RouterLink to="/"><i class="bi bi-house me-1" aria-hidden="true"></i>Home</RouterLink>
-        <span class="separator" aria-hidden="true"><i class="bi bi-chevron-right"></i></span>
+      <nav
+        class="breadcrumb-dopamine breadcrumb-visible mb-4 fade-up"
+        aria-label="Breadcrumb navigation"
+      >
+        <RouterLink to="/"
+          ><i class="bi bi-house me-1" aria-hidden="true"></i>Home</RouterLink
+        >
+        <span class="separator" aria-hidden="true"
+          ><i class="bi bi-chevron-right"></i
+        ></span>
         <RouterLink to="/routines">Routines</RouterLink>
-        <span class="separator" aria-hidden="true"><i class="bi bi-chevron-right"></i></span>
+        <span class="separator" aria-hidden="true"
+          ><i class="bi bi-chevron-right"></i
+        ></span>
         <span class="current" aria-current="page">New Routine</span>
       </nav>
 
-      <!-- CABECERA -->
       <div class="mb-4 fade-up delay-1">
         <h1 class="page-title">
           <em>build a new</em>
@@ -118,18 +142,20 @@ function saveRoutine() {
         </h1>
       </div>
 
-      <!-- ERROR -->
       <div v-if="errorMessage" class="error-text mb-4" role="alert">
         <i class="bi bi-exclamation-triangle me-2" aria-hidden="true"></i>
         <strong>{{ errorMessage }}</strong>
       </div>
 
-      <form @submit.prevent="saveRoutine" class="d-flex flex-column gap-4 fade-up delay-2" novalidate>
-
-        <!-- TÍTULO -->
+      <form
+        @submit.prevent="saveRoutine"
+        class="d-flex flex-column gap-4 fade-up delay-2"
+        novalidate
+      >
         <div class="form-section">
           <label for="routine-title" class="form-label-accessible">
-            <i class="bi bi-pencil me-2" aria-hidden="true"></i>Title <span class="required-star" aria-hidden="true">*</span>
+            <i class="bi bi-pencil me-2" aria-hidden="true"></i>Title
+            <span class="required-star" aria-hidden="true">*</span>
           </label>
           <input
             id="routine-title"
@@ -138,10 +164,9 @@ function saveRoutine() {
             class="form-control dopamine-input input-lg"
             placeholder="e.g. Morning Routine, Wind down..."
             aria-required="true"
-          >
+          />
         </div>
 
-        <!-- DESCRIPCIÓN -->
         <div class="form-section">
           <label for="routine-descrip" class="form-label-accessible">
             <i class="bi bi-text-left me-2" aria-hidden="true"></i>Description
@@ -152,10 +177,9 @@ function saveRoutine() {
             type="text"
             class="form-control dopamine-input input-lg"
             placeholder="What is this routine for?"
-          >
+          />
         </div>
 
-        <!-- ICONO -->
         <div class="form-section">
           <label for="routine-icon" class="form-label-accessible">
             <i class="bi bi-emoji-smile me-2" aria-hidden="true"></i>Icon
@@ -168,15 +192,15 @@ function saveRoutine() {
             placeholder="e.g. 🌅"
             maxlength="4"
             aria-describedby="icon-hint"
-          >
+          />
           <p id="icon-hint" class="field-hint mt-2">
             <i class="bi bi-keyboard me-1" aria-hidden="true"></i>
             <strong>Windows:</strong> press <kbd>Win + .</kbd> &nbsp;·&nbsp;
-            <strong>Mac:</strong> press <kbd>Cmd + Ctrl + Space</kbd> to open the emoji picker
+            <strong>Mac:</strong> press <kbd>Cmd + Ctrl + Space</kbd> to open
+            the emoji picker
           </p>
         </div>
 
-        <!-- HORA -->
         <div class="form-section">
           <label for="routine-hour" class="form-label-accessible mb-2">
             <i class="bi bi-clock me-2" aria-hidden="true"></i>Time
@@ -188,13 +212,13 @@ function saveRoutine() {
             type="time"
             class="form-control dopamine-input input-date"
             style="max-width: 160px"
-          >
+          />
         </div>
 
-        <!-- FRECUENCIA -->
         <div class="form-section">
           <label class="form-label-accessible mb-3">
-            <i class="bi bi-arrow-repeat me-2" aria-hidden="true"></i>Frequency <span class="required-star" aria-hidden="true">*</span>
+            <i class="bi bi-arrow-repeat me-2" aria-hidden="true"></i>Frequency
+            <span class="required-star" aria-hidden="true">*</span>
           </label>
           <div class="row g-2" role="radiogroup" aria-label="Select frequency">
             <div class="col-4">
@@ -208,7 +232,10 @@ function saveRoutine() {
                 @keydown.enter="routineFrecuency = 'daily'"
                 @keydown.space.prevent="routineFrecuency = 'daily'"
               >
-                <i class="bi bi-sun d-block mb-1 freq-btn-icon" aria-hidden="true"></i>
+                <i
+                  class="bi bi-sun d-block mb-1 freq-btn-icon"
+                  aria-hidden="true"
+                ></i>
                 Daily
               </div>
             </div>
@@ -223,14 +250,19 @@ function saveRoutine() {
                 @keydown.enter="routineFrecuency = 'weekly'"
                 @keydown.space.prevent="routineFrecuency = 'weekly'"
               >
-                <i class="bi bi-calendar-week d-block mb-1 freq-btn-icon" aria-hidden="true"></i>
+                <i
+                  class="bi bi-calendar-week d-block mb-1 freq-btn-icon"
+                  aria-hidden="true"
+                ></i>
                 Weekly
               </div>
             </div>
             <div class="col-4">
               <div
                 class="freq-btn"
-                :class="routineFrecuency === 'monthly' ? 'freq-btn-monthly' : ''"
+                :class="
+                  routineFrecuency === 'monthly' ? 'freq-btn-monthly' : ''
+                "
                 role="radio"
                 :aria-checked="routineFrecuency === 'monthly'"
                 tabindex="0"
@@ -238,7 +270,10 @@ function saveRoutine() {
                 @keydown.enter="routineFrecuency = 'monthly'"
                 @keydown.space.prevent="routineFrecuency = 'monthly'"
               >
-                <i class="bi bi-calendar-month d-block mb-1 freq-btn-icon" aria-hidden="true"></i>
+                <i
+                  class="bi bi-calendar-month d-block mb-1 freq-btn-icon"
+                  aria-hidden="true"
+                ></i>
                 Monthly
               </div>
             </div>
@@ -250,14 +285,20 @@ function saveRoutine() {
           </select>
         </div>
 
-        <!-- DÍAS si es semanal -->
         <div v-if="routineFrecuency == 'weekly'" class="form-section fade-up">
           <label class="form-label-accessible mb-3">
-            <i class="bi bi-calendar-week me-2 text-weekly" aria-hidden="true"></i>
+            <i
+              class="bi bi-calendar-week me-2 text-weekly"
+              aria-hidden="true"
+            ></i>
             <span class="text-weekly">Days of the week</span>
             <span class="required-star ms-1" aria-hidden="true">*</span>
           </label>
-          <div class="days-grid" role="group" aria-label="Select days of the week">
+          <div
+            class="days-grid"
+            role="group"
+            aria-label="Select days of the week"
+          >
             <div
               v-for="day in weekDaysList"
               :key="day"
@@ -279,10 +320,12 @@ function saveRoutine() {
           </p>
         </div>
 
-        <!-- DÍA DEL MES si es mensual -->
         <div v-if="routineFrecuency == 'monthly'" class="form-section fade-up">
           <label for="routine-dayofmonth" class="form-label-accessible mb-2">
-            <i class="bi bi-calendar-event me-2 text-monthly" aria-hidden="true"></i>
+            <i
+              class="bi bi-calendar-event me-2 text-monthly"
+              aria-hidden="true"
+            ></i>
             <span class="text-monthly">Day of the month</span>
             <span class="required-star ms-1" aria-hidden="true">*</span>
           </label>
@@ -297,10 +340,9 @@ function saveRoutine() {
             placeholder="e.g. 15"
             style="max-width: 140px"
             aria-required="true"
-          >
+          />
         </div>
 
-        <!-- PASOS -->
         <div class="form-section">
           <label class="form-label-accessible mb-3">
             <i class="bi bi-list-check me-2" aria-hidden="true"></i>Steps
@@ -315,7 +357,7 @@ function saveRoutine() {
               class="form-control dopamine-input flex-grow-1 input-lg"
               placeholder="e.g. Shower, Breakfast, Review the day..."
               @keydown.enter.prevent="addNewStep"
-            >
+            />
             <button
               type="button"
               class="btn-dopamine btn-dopamine-ghost step-add-btn"
@@ -326,9 +368,22 @@ function saveRoutine() {
             </button>
           </div>
 
-          <div v-if="routineSteps.length > 0" class="d-flex flex-column gap-2" role="list" aria-label="Routine steps">
-            <div v-for="(s, index) in routineSteps" :key="index" class="step-item" role="listitem">
-              <i class="bi bi-grip-vertical step-drag-icon" aria-hidden="true"></i>
+          <div
+            v-if="routineSteps.length > 0"
+            class="d-flex flex-column gap-2"
+            role="list"
+            aria-label="Routine steps"
+          >
+            <div
+              v-for="(s, index) in routineSteps"
+              :key="index"
+              class="step-item"
+              role="listitem"
+            >
+              <i
+                class="bi bi-grip-vertical step-drag-icon"
+                aria-hidden="true"
+              ></i>
               <span class="flex-grow-1 step-item-text">{{ s.title }}</span>
               <button
                 type="button"
@@ -341,21 +396,27 @@ function saveRoutine() {
             </div>
           </div>
 
-          <p v-else class="days-hint">
+          <p class="days-hint">
             <i class="bi bi-info-circle me-1" aria-hidden="true"></i>
             No steps added yet.
           </p>
         </div>
 
-        <!-- RESUMEN -->
-        <div v-if="routineSteps.length > 0" class="routine-summary" aria-live="polite">
+        <div
+          v-if="routineSteps.length > 0"
+          class="routine-summary"
+          aria-live="polite"
+        >
           <i class="bi bi-check2-all me-2" aria-hidden="true"></i>
-          This routine will have <strong>{{ routineSteps.length }}</strong> step(s).
+          This routine will have
+          <strong>{{ routineSteps.length }}</strong> step(s).
         </div>
 
-        <!-- BOTONES -->
         <div class="d-flex gap-3 flex-wrap pb-2">
-          <button type="submit" class="btn-dopamine btn-dopamine-primary form-action-btn">
+          <button
+            type="submit"
+            class="btn-dopamine btn-dopamine-primary form-action-btn"
+          >
             <i class="bi bi-check2 me-2" aria-hidden="true"></i> Create Routine
           </button>
           <button
@@ -367,7 +428,6 @@ function saveRoutine() {
             <i class="bi bi-x me-2" aria-hidden="true"></i> Cancel
           </button>
         </div>
-
       </form>
     </div>
   </div>
@@ -378,7 +438,7 @@ function saveRoutine() {
   min-height: 100vh;
   background-color: var(--bg-subtle);
   padding: 2.5rem 1.5rem 5rem;
-  font-family: 'Atkinson Hyperlegible', sans-serif;
+  font-family: "Atkinson Hyperlegible", sans-serif;
 }
 
 .newroutine-container {
@@ -387,7 +447,9 @@ function saveRoutine() {
 }
 
 @media (max-width: 768px) {
-  .newroutine-wrapper { padding: 1.5rem 1rem 4rem; }
+  .newroutine-wrapper {
+    padding: 1.5rem 1rem 4rem;
+  }
 }
 
 .form-section {
@@ -406,12 +468,21 @@ function saveRoutine() {
   padding: 0.7rem 1rem !important;
 }
 
-.breadcrumb-visible a        { color: var(--cinnamon-mid) !important; font-weight: 700 !important; font-size: 1rem !important; }
-.breadcrumb-visible .current { color: var(--cinnamon-dark) !important; font-weight: 700 !important; }
-.breadcrumb-visible .separator { color: var(--vanilla-mid) !important; }
+.breadcrumb-visible a {
+  color: var(--cinnamon-mid) !important;
+  font-weight: 700 !important;
+  font-size: 1rem !important;
+}
+.breadcrumb-visible .current {
+  color: var(--cinnamon-dark) !important;
+  font-weight: 700 !important;
+}
+.breadcrumb-visible .separator {
+  color: var(--vanilla-mid) !important;
+}
 
 .form-label-accessible {
-  font-family: 'Atkinson Hyperlegible', sans-serif;
+  font-family: "Atkinson Hyperlegible", sans-serif;
   font-size: 1rem;
   font-weight: 700;
   color: var(--cinnamon-dark);
@@ -420,12 +491,19 @@ function saveRoutine() {
   margin-bottom: 0.5rem;
 }
 
-.required-star { color: var(--state-error); font-weight: 700; }
-.field-hint    { font-size: 0.82rem; color: var(--cinnamon-soft); margin: 0; }
+.required-star {
+  color: var(--state-error);
+  font-weight: 700;
+}
+.field-hint {
+  font-size: 0.82rem;
+  color: var(--cinnamon-soft);
+  margin: 0;
+}
 
-/* KBD para atajos de teclado */
+/* kbd para atajos de teclado */
 kbd {
-  font-family: 'Atkinson Hyperlegible', sans-serif;
+  font-family: "Atkinson Hyperlegible", sans-serif;
   font-size: 0.78rem;
   background: var(--bg-subtle);
   border: 1px solid var(--vanilla-mid);
@@ -435,21 +513,29 @@ kbd {
   box-shadow: 0 1px 0 var(--vanilla-mid);
 }
 
-/* INPUT DEL ICONO — más grande para ver el emoji */
+/* input del icon*/
 .icon-input {
   font-size: 1.4rem !important;
   max-width: 120px;
 }
 
-.input-lg   { font-size: 1rem !important;  padding: 0.7rem 0.9rem !important; min-height: 48px !important; }
-.input-date { font-size: 0.95rem !important; padding: 0.65rem 0.7rem !important; min-height: 48px !important; }
+.input-lg {
+  font-size: 1rem !important;
+  padding: 0.7rem 0.9rem !important;
+  min-height: 48px !important;
+}
+.input-date {
+  font-size: 0.95rem !important;
+  padding: 0.65rem 0.7rem !important;
+  min-height: 48px !important;
+}
 
-/* FRECUENCIA */
+/* frecuencia */
 .freq-btn {
   text-align: center;
   padding: 0.9rem 0.5rem;
   cursor: pointer;
-  font-family: 'Atkinson Hyperlegible', sans-serif;
+  font-family: "Atkinson Hyperlegible", sans-serif;
   font-size: 0.9rem;
   font-weight: 700;
   border-radius: 8px;
@@ -459,18 +545,45 @@ kbd {
   transition: all 0.15s;
 }
 
-.freq-btn:hover           { background: var(--vanilla-light); }
-.freq-btn:focus-visible   { outline: 3px solid var(--cinnamon-mid); outline-offset: 2px; }
-.freq-btn-icon            { font-size: 1.3rem; }
-.freq-btn-daily           { background: var(--bg-base);       border-color: var(--cinnamon-mid); color: var(--cinnamon-dark); }
-.freq-btn-weekly          { background: var(--state-info-bg);  border-color: var(--btn-info);     color: #2A5068; }
-.freq-btn-monthly         { background: var(--vanilla-light);  border-color: var(--vanilla-deep); color: var(--cinnamon-dark); }
+.freq-btn:hover {
+  background: var(--vanilla-light);
+}
+.freq-btn:focus-visible {
+  outline: 3px solid var(--cinnamon-mid);
+  outline-offset: 2px;
+}
+.freq-btn-icon {
+  font-size: 1.3rem;
+}
+.freq-btn-daily {
+  background: var(--bg-base);
+  border-color: var(--cinnamon-mid);
+  color: var(--cinnamon-dark);
+}
+.freq-btn-weekly {
+  background: var(--state-info-bg);
+  border-color: var(--btn-info);
+  color: #2a5068;
+}
+.freq-btn-monthly {
+  background: var(--vanilla-light);
+  border-color: var(--vanilla-deep);
+  color: var(--cinnamon-dark);
+}
 
-.text-weekly  { color: #2A5068; }
-.text-monthly { color: var(--vanilla-deep); }
+.text-weekly {
+  color: #2a5068;
+}
+.text-monthly {
+  color: var(--vanilla-deep);
+}
 
-/* DÍAS */
-.days-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+/* days */
+.days-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
 
 .day-btn {
   min-width: 52px;
@@ -479,7 +592,7 @@ kbd {
   border: 2px solid var(--vanilla-light);
   background: var(--bg-subtle);
   color: var(--cinnamon-mid);
-  font-family: 'Atkinson Hyperlegible', sans-serif;
+  font-family: "Atkinson Hyperlegible", sans-serif;
   font-size: 0.82rem;
   font-weight: 700;
   display: flex;
@@ -491,16 +604,31 @@ kbd {
   user-select: none;
 }
 
-.day-btn:hover        { border-color: var(--btn-info); background: var(--state-info-bg); color: #2A5068; }
-.day-btn:focus-visible { outline: 3px solid var(--btn-info); outline-offset: 2px; }
-.day-btn-selected     { background: var(--btn-info) !important; border-color: var(--btn-info) !important; color: #fff !important; }
-.days-hint            { font-size: 0.82rem; color: var(--cinnamon-soft); margin: 0.6rem 0 0; }
+.day-btn:hover {
+  border-color: var(--btn-info);
+  background: var(--state-info-bg);
+  color: #2a5068;
+}
+.day-btn:focus-visible {
+  outline: 3px solid var(--btn-info);
+  outline-offset: 2px;
+}
+.day-btn-selected {
+  background: var(--btn-info) !important;
+  border-color: var(--btn-info) !important;
+  color: #fff !important;
+}
+.days-hint {
+  font-size: 0.82rem;
+  color: var(--cinnamon-soft);
+  margin: 0.6rem 0 0;
+}
 
-/* PASOS */
+/* pasos */
 .step-add-btn {
   min-height: 48px;
   white-space: nowrap;
-  font-family: 'Atkinson Hyperlegible', sans-serif;
+  font-family: "Atkinson Hyperlegible", sans-serif;
   font-weight: 700;
 }
 
@@ -515,10 +643,13 @@ kbd {
   border-radius: 8px;
 }
 
-.step-drag-icon { color: var(--vanilla-mid); font-size: 1rem; }
+.step-drag-icon {
+  color: var(--vanilla-mid);
+  font-size: 1rem;
+}
 
 .step-item-text {
-  font-family: 'Atkinson Hyperlegible', sans-serif;
+  font-family: "Atkinson Hyperlegible", sans-serif;
   font-size: 0.92rem;
   font-weight: 600;
   color: var(--cinnamon-dark);
@@ -536,16 +667,16 @@ kbd {
   border-radius: 6px;
 }
 
-/* RESUMEN */
+/* resumen */
 .routine-summary {
   background: var(--state-info-bg);
   border: 1px solid var(--btn-info);
   border-radius: 10px;
   padding: 0.85rem 1.1rem;
-  font-family: 'Atkinson Hyperlegible', sans-serif;
+  font-family: "Atkinson Hyperlegible", sans-serif;
   font-size: 0.9rem;
   font-weight: 500;
-  color: #2A5068;
+  color: #2a5068;
   display: flex;
   align-items: center;
   flex-wrap: wrap;
@@ -553,7 +684,7 @@ kbd {
 }
 
 .form-action-btn {
-  font-family: 'Atkinson Hyperlegible', sans-serif;
+  font-family: "Atkinson Hyperlegible", sans-serif;
   font-size: 1rem;
   font-weight: 700;
   min-height: 48px;
