@@ -22,12 +22,12 @@ onMounted(function () {
       <div class="landing-header-inner">
         <div class="landing-logo">
           <img
-            src="/logo.png"
+            src="../assets/logo.png"
             alt=""
             class="landing-logo-img"
             onerror="this.style.display='none'"
           />
-          Dopa<em>Mine</em>
+          DopaMine
         </div>
         <div class="d-flex gap-2">
           <RouterLink to="/login" class="btn-dopamine btn-dopamine-ghost landing-nav-btn">
@@ -204,7 +204,7 @@ onMounted(function () {
   align-items: center;
   gap: 0.5rem;
 }
-.landing-logo-img { width: 28px; height: 28px; border-radius: 6px; object-fit: contain; }
+.landing-logo-img { width: 60px; height: 60px; border-radius: 6px; object-fit: contain; }
 .landing-logo em  { font-style: italic; font-weight: 300; color: var(--vanilla-light); }
 
 /* botones del header de landing */
