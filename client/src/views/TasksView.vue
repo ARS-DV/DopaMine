@@ -143,9 +143,9 @@ function isOverdue(task) {
 
 //funcion auxiliar para comrpobar si la tarea caduca hoy
 function isDueToday(task) {
-  if (task.done === true){
+  if (task.done === true) {
     return false;
-  } 
+  }
   let today = new Date().toISOString().split("T")[0];
   let expDate = "";
   if (task.expDate) {
@@ -157,7 +157,7 @@ function isDueToday(task) {
 //funcion auxiliar para transformar la fecha
 function formatDate(dateStr) {
   if (!dateStr) {
-    return("No deadline");
+    return "No deadline";
   }
   let date = new Date(dateStr);
   return date.toLocaleDateString("en-GB");
@@ -351,15 +351,8 @@ onMounted(function () {
               @click="toggleDetail(task.id)"
             >
               <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
-                <span
-                  class="task-title"
-                  :class="
-                    task.done
-                      ? 'text-decoration-line-through task-title-done'
-                      : ''
-                  "
-                >
-                  {{ task.title }}
+                <span class="task-title ...">
+                  <span v-if="task.icon">{{ task.icon }} </span>{{ task.title }}
                 </span>
                 <span class="bdg" :class="'bdg-' + task.difficulty">{{
                   task.difficulty

@@ -10,7 +10,7 @@ const route     = useRoute()
 const dropdown       = ref(false)  // dropdown de vistas en desktop
 const mobileMenuOpen = ref(false)  // menú hamburguesa en móvil
 
-const avatarBase = 'http://localhost/DopaMine_Server/uploads/avatars/'
+const avatarBase = 'http://aruisie.infinityfreeapp.com/DopaMine_Server/uploads/avatars/'
 
 function logout() {
   mobileMenuOpen.value = false
@@ -320,7 +320,7 @@ const initials = computed(function() {
 .header-user-link:hover { background: rgba(255,255,255,0.1); border-color: rgba(237, 217, 163, 0.35); }
 .header-user-link:focus-visible { outline: 2px solid var(--vanilla-light); outline-offset: 3px; border-radius: 8px; }
 
-.header-avatar-img { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(237, 217, 163, 0.5); flex-shrink: 0; }
+.header-avatar-img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(237, 217, 163, 0.5); flex-shrink: 0; }
 
 .header-avatar-initials {
   width: 34px; height: 34px; border-radius: 50%;

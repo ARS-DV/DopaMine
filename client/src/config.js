@@ -1,1 +1,1 @@
-export const rutaApi = 'http://localhost/DopaMine_Server/api.php'
+export const rutaApi = 'https://aruisie.infinityfreeapp.com/DopaMine_Server/api.php'

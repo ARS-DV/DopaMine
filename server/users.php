@@ -7,7 +7,7 @@ if (!isset($method)) {
     exit;
 }
 
-// GET — perfil propio por id
+//metodo GET del perfil propio por id
 if ($method == 'GET') {
     if (isset($_GET['id'])) {
         $id   = intval($_GET['id']);
@@ -24,13 +24,13 @@ if ($method == 'GET') {
 }
 
 
-// POST LOGIN
+//metodo POST del  LOGIN
 if ($method == 'POST' && isset($_GET['login'])) {
     $data  = json_decode(file_get_contents('php://input'), true);
     $email = trim($data['email']);
     $pswd  = $data['pswd'];
 
-    // ✅ pswd incluido en el SELECT para poder verificarlo
+    //pswd incluido en el SELECT para poder verificarlo
     $stmt = $conn->prepare(
         "SELECT id, nickName, email, role, avatar, pswd FROM user WHERE email = ?"
     );
@@ -45,7 +45,7 @@ if ($method == 'POST' && isset($_GET['login'])) {
     }
 
     if (password_verify($pswd, $user['pswd'])) {
-        // Nunca devolver la contraseña al frontend
+        //nunca se devuleve la contraseña al frontend
         unset($user['pswd']);
         echo json_encode(['status' => 'success', 'user' => $user]);
     } else {
@@ -54,7 +54,7 @@ if ($method == 'POST' && isset($_GET['login'])) {
 }
 
 
-// POST REGISTER
+// metodo POST para REGISTER
 if ($method == 'POST' && !isset($_GET['login'])) {
     $data     = json_decode(file_get_contents('php://input'), true);
     $nickName = $data['nickName'];
@@ -76,7 +76,7 @@ if ($method == 'POST' && !isset($_GET['login'])) {
 }
 
 
-// PUT — actualizar perfil (nickName, email, contraseña opcional)
+// metodo PUT para actualizar perfil 
 if ($method == 'PUT') {
     $id   = intval($_GET['id']);
     $data = json_decode(file_get_contents('php://input'), true);
@@ -85,13 +85,13 @@ if ($method == 'PUT') {
     $email    = isset($data['email'])    ? trim($data['email'])    : null;
     $pswd     = isset($data['pswd'])     ? $data['pswd']           : null;
 
-    // Validaciones básicas
+    //validaciones basicas
     if (!$nickName || !$email) {
         echo json_encode(['status' => 'error', 'message' => 'Nickname and email are required']);
         exit;
     }
 
-    // Comprobar que el email no lo usa otro usuario
+    //comprobar que el email no lo usa otro usuario
     $check = $conn->prepare("SELECT id FROM user WHERE email = ? AND id != ?");
     $check->bind_param("si", $email, $id);
     $check->execute();
@@ -103,12 +103,12 @@ if ($method == 'PUT') {
         exit;
     }
 
-    // Actualizar sin cambiar contraseña
+    //actualizar sin cambiar contraseña
     if (!$pswd) {
         $stmt = $conn->prepare("UPDATE user SET nickName = ?, email = ? WHERE id = ?");
         $stmt->bind_param("ssi", $nickName, $email, $id);
 
-    // Actualizar con nueva contraseña
+    //actualizar nueva contraseña
     } else {
         if (strlen($pswd) < 7) {
             echo json_encode(['status' => 'error', 'message' => 'Password must be at least 7 characters']);
@@ -122,7 +122,7 @@ if ($method == 'PUT') {
     if ($stmt->execute()) {
         $stmt->close();
 
-        // Devolver los datos actualizados para sincronizar Pinia
+        //devolver los datos actualizados para sincronizar con Pinia
         $stmt2 = $conn->prepare(
             "SELECT id, nickName, email, role, avatar FROM user WHERE id = ?"
         );
@@ -143,7 +143,7 @@ if ($method == 'PUT') {
 }
 
 
-// DELETE — eliminar usuario
+// metodo DELETE para eliminar usuario
 if ($method == 'DELETE') {
     $id   = intval($_GET['id']);
     $data = json_decode(file_get_contents('php://input'), true);

@@ -14,7 +14,6 @@ export const useUserStore = defineStore('user', () => {
     localStorage.removeItem('session')
   }
 
-  // ✅ movida antes del return y con persistencia en localStorage
   function updateUser(newData) {
     user.value = { ...user.value, ...newData }
     localStorage.setItem('session', JSON.stringify(user.value))
@@ -25,3 +24,10 @@ export const useUserStore = defineStore('user', () => {
 
   return { user, login, logout, isLogged, isAdmin, updateUser }
 })
+
+
+
+
+
+
+

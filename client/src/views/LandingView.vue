@@ -154,11 +154,6 @@ onMounted(function () {
 
     </main>
 
-    <!-- pie de pagina -->
-    <footer class="landing-footer">
-      <p>DopaMine · Built for ADHD brains · DAW Project</p>
-    </footer>
-
   </div>
 </template>
 
@@ -204,7 +199,7 @@ onMounted(function () {
   align-items: center;
   gap: 0.5rem;
 }
-.landing-logo-img { width: 60px; height: 60px; border-radius: 6px; object-fit: contain; }
+.landing-logo-img { width: 73px; height: 73px; border-radius: 6px; object-fit: contain; }
 .landing-logo em  { font-style: italic; font-weight: 300; color: var(--vanilla-light); }
 
 /* botones del header de landing */
@@ -351,14 +346,6 @@ onMounted(function () {
 .cta-title { font-size: 1.8rem; font-weight: 700; color: var(--cinnamon-dark); margin-bottom: 0.5rem; }
 .cta-sub   { font-size: 0.95rem; color: var(--cinnamon-soft); margin-bottom: 1.5rem; }
 
-/* pie de pagina */
-.landing-footer {
-  background: var(--cinnamon-dark);
-  text-align: center;
-  padding: 1.2rem;
-  font-size: 0.82rem;
-  color: rgba(237, 217, 163, 0.6);
-}
 
 /* responsive */
 @media (max-width: 768px) {

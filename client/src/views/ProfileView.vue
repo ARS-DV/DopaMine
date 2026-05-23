@@ -7,8 +7,8 @@ import { rutaApi } from '@/config.js'
 
 const userStore = useUserStore()
 const router    = useRouter()
+const avatarBase = 'http://aruisie.infinityfreeapp.com/DopaMine_Server/uploads/avatars/'
 
-const avatarBase = 'http://localhost/DopaMine_Server/uploads/avatars/'
 
 // variables del formulario
 const nickNameInput = ref('')
@@ -106,7 +106,7 @@ async function saveProfile() {
     formData.append('avatar',  avatarFile.value)
 
     try {
-      let res  = await fetch('http://localhost/DopaMine_Server/upload_avatar.php', {
+        let res  = await fetch('https://aruisie.infinityfreeapp.com/DopaMine_Server/upload_avatar.php',{
         method: 'POST',
         body:   formData
       })
