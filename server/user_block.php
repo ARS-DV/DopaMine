@@ -1,7 +1,5 @@
 <?php
-// ── AÑADIR ESTE BLOQUE PUT A users.php ──────────────────────
-// Colócalo después del bloque POST y antes del DELETE
-// PUT — actualizar perfil del usuario (nickname, email, contraseña)
+// PUT para actualizar perfil del usuario 
 
 if ($method === 'PUT') {
     $id   = intval($_GET['id']);
@@ -11,13 +9,13 @@ if ($method === 'PUT') {
     $email    = isset($data['email'])    ? trim($data['email'])    : null;
     $pswd     = isset($data['pswd'])     ? $data['pswd']           : null;
 
-    // Validaciones básicas
+    // validaciones basicas
     if (!$nickName || !$email) {
         echo json_encode(['status' => 'error', 'message' => 'Nickname and email are required']);
         exit;
     }
 
-    // Comprobar que el email no lo usa otro usuario
+    // comprobar que el email no lo usa otro usuario
     $check = $conn->prepare("SELECT id FROM user WHERE email = ? AND id != ?");
     $check->bind_param("si", $email, $id);
     $check->execute();
@@ -29,12 +27,12 @@ if ($method === 'PUT') {
         exit;
     }
 
-    // Actualizar sin cambiar contraseña
+    // actualizar sin cambiar contraseña
     if (!$pswd) {
         $stmt = $conn->prepare("UPDATE user SET nickName = ?, email = ? WHERE id = ?");
         $stmt->bind_param("ssi", $nickName, $email, $id);
 
-    // Actualizar con nueva contraseña
+    // actualizar cambiando contraseña
     } else {
         if (strlen($pswd) < 7) {
             echo json_encode(['status' => 'error', 'message' => 'Password must be at least 7 characters']);
@@ -46,7 +44,7 @@ if ($method === 'PUT') {
     }
 
     if ($stmt->execute()) {
-        // Devolver los datos actualizados para que Pinia los sincronice
+        // devolver datos actualizados para Pinia
         $stmt2 = $conn->prepare("SELECT id, nickName, email, role, avatar FROM user WHERE id = ?");
         $stmt2->bind_param("i", $id);
         $stmt2->execute();

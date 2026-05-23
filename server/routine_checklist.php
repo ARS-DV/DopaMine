@@ -1,7 +1,7 @@
 <?php
 include 'db.php';
 
-// GET — obtener checklist de una rutina
+// GET para obtener checklist rutina
 if ($method === 'GET') {
     if (!isset($_GET['routine_id'])) {
         echo json_encode(['status' => 'error', 'message' => 'routine_id is required']);
@@ -21,13 +21,13 @@ if ($method === 'GET') {
 }
 
 
-// POST — añadir paso al checklist de una rutina
+// POST para añadir paso al checklist de una rutina
 if ($method === 'POST') {
     $data       = json_decode(file_get_contents('php://input'), true);
     $routine_id = intval($data['routine_id']);
     $title      = $data['title'];
 
-    // Calcular el siguiente sort_order
+    //calcular siguiente sort_order
     $stmt = $conn->prepare(
         "SELECT COALESCE(MAX(sort_order), 0) + 1 AS next_order
          FROM routine_checklist WHERE routine_id = ?"
@@ -53,27 +53,34 @@ if ($method === 'POST') {
 }
 
 
-// PATCH — marcar paso como hecho o no hecho
+// PATCH para marcar paso 
 if ($method === 'PATCH') {
     $id   = intval($_GET['id']);
     $data = json_decode(file_get_contents('php://input'), true);
     $done = intval($data['done']);
 
-    $stmt = $conn->prepare("UPDATE routine_checklist SET done = ? WHERE id = ?");
-    $stmt->bind_param("ii", $done, $id);
+    if ($done === 1) {
+        //si se marca hoy se guarda la fecha
+        $stmt = $conn->prepare("UPDATE routine_checklist SET done = 1, last_done_date = CURDATE() WHERE id = ?");
+    } else {
+        //sino se borra
+        $stmt = $conn->prepare("UPDATE routine_checklist SET done = 0, last_done_date = NULL WHERE id = ?");
+    }
+    $stmt->bind_param("i", $id);
 
     echo $stmt->execute()
         ? json_encode(['status' => 'success', 'done' => (bool)$done])
-        : json_encode(['status' => 'error', 'message' => 'Error updating step']);
+        : json_encode(['status' => 'error', 'message' => 'Error updating item']);
+
+    $stmt->close();
 }
 
-
-// PUT — editar título de un paso o reordenar
+// PUT para editar titulo 
 if ($method === 'PUT') {
     $id   = intval($_GET['id']);
     $data = json_decode(file_get_contents('php://input'), true);
 
-    // Reordenar (recibe array de ids en el nuevo orden)
+    // reordenarlo 
     if (isset($data['order']) && is_array($data['order'])) {
         $conn->begin_transaction();
         try {
@@ -92,7 +99,7 @@ if ($method === 'PUT') {
             echo json_encode(['status' => 'error', 'message' => 'Error updating order']);
         }
 
-    // Editar título
+    //editar titulo
     } elseif (isset($data['title'])) {
         $title = $data['title'];
         $stmt  = $conn->prepare("UPDATE routine_checklist SET title = ? WHERE id = ?");
@@ -105,7 +112,7 @@ if ($method === 'PUT') {
 }
 
 
-// DELETE — eliminar paso del checklist
+// DELETE para eliminar paso del checklist
 if ($method === 'DELETE') {
     $id   = intval($_GET['id']);
     $stmt = $conn->prepare("DELETE FROM routine_checklist WHERE id = ?");

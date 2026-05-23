@@ -7,7 +7,7 @@ import { rutaApi } from '@/config.js'
 
 const userStore = useUserStore()
 const router    = useRouter()
-const avatarBase = 'http://aruisie.infinityfreeapp.com/DopaMine_Server/uploads/avatars/'
+const avatarBase = 'https://aruisie.infinityfreeapp.com/DopaMine_Server/uploads/avatars/'
 
 
 // variables del formulario
@@ -89,12 +89,16 @@ async function saveProfile() {
     return
   }
 
- function validatePassword(pswd) {
-  if (pswd.length < 10)            return 'Password must be at least 10 characters'
-  if (!/[A-Z]/.test(pswd))         return 'Password must contain at least one uppercase letter'
-  if (!/[a-z]/.test(pswd))         return 'Password must contain at least one lowercase letter'
-  if (!/[0-9]/.test(pswd))         return 'Password must contain at least one number'
-  return null
+ if (pswdInput.value !== '') {
+  let pswdError = validatePassword(pswdInput.value)
+  if (pswdError) {
+    errorMessage.value = pswdError
+    return
+  }
+  if (pswdInput.value !== pswdConfirm.value) {
+    errorMessage.value = 'Passwords do not match'
+    return
+  }
 }
 
   loading.value = true

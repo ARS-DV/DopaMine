@@ -7,7 +7,7 @@ if (!isset($method)) {
     exit;
 }
 
-// GET — obtener todos los eventos del calendario en un rango de fechas
+// GET para obtener todos los eventos en un rango de fechas
 if ($method === 'GET') {
 
     if (!isset($_GET['user_id'], $_GET['start'], $_GET['end'])) {
@@ -20,7 +20,7 @@ if ($method === 'GET') {
     $end     = $_GET['end'];
     $events  = [];
 
-    // ── TAREAS ──────────────────────────────────────────────
+    // stament de tareas
     $stmt = $conn->prepare("
         SELECT id, title, descrip, startDate, expDate, difficulty, done
         FROM task
@@ -31,11 +31,11 @@ if ($method === 'GET') {
     $stmt->execute();
     $result = $stmt->get_result();
 
-    // ✅ Guardar en array y cerrar antes de continuar
+    // se guardan en un array antes de comenzar
     $tasks_raw = [];
     while ($row = $result->fetch_assoc()) $tasks_raw[] = $row;
     $stmt->close();
-
+    //se diferencian por color las distintas cosas pendientes
     $diff_colors = [
         'easy'   => '#7A9E7E',
         'medium' => '#C9A030',
@@ -60,7 +60,7 @@ if ($method === 'GET') {
         ];
     }
 
-    // ── HÁBITOS ─────────────────────────────────────────────
+    // stament de habitos
     $stmt2 = $conn->prepare("
         SELECT h.id, h.title, h.icon, h.frecuency, h.dayOfMonth
         FROM habit h
@@ -70,7 +70,6 @@ if ($method === 'GET') {
     $stmt2->execute();
     $result2 = $stmt2->get_result();
 
-    // ✅ Guardar en array y cerrar antes de sub-queries
     $habits_raw = [];
     while ($row = $result2->fetch_assoc()) $habits_raw[] = $row;
     $stmt2->close();
@@ -81,7 +80,7 @@ if ($method === 'GET') {
         $days_in_range = get_days_in_range($habit, $start, $end, $conn);
 
         foreach ($days_in_range as $date) {
-            // ¿Estaba completado ese día?
+            //si esta completada ese dia...
             $stmt3 = $conn->prepare(
                 "SELECT done FROM habit_record WHERE habit_id = ? AND dateOfHabit = ?"
             );
@@ -109,7 +108,7 @@ if ($method === 'GET') {
         }
     }
 
-    // ── RUTINAS ─────────────────────────────────────────────
+    //stament de rutinas
     $stmt4 = $conn->prepare("
         SELECT id, title, icon, hour, color, frecuency, dayOfMonth
         FROM routine
@@ -119,7 +118,6 @@ if ($method === 'GET') {
     $stmt4->execute();
     $result4 = $stmt4->get_result();
 
-    // ✅ Guardar en array y cerrar antes de sub-queries
     $routines_raw = [];
     while ($row = $result4->fetch_assoc()) $routines_raw[] = $row;
     $stmt4->close();
@@ -128,7 +126,7 @@ if ($method === 'GET') {
         $days_in_range = get_days_in_range($routine, $start, $end, $conn, 'routine');
 
         foreach ($days_in_range as $date) {
-            // ¿Estaba completada ese día?
+            // comprueba si esta completada
             $stmt5 = $conn->prepare(
                 "SELECT done FROM routine_record WHERE routine_id = ? AND dateOfRoutine = ?"
             );
@@ -139,7 +137,7 @@ if ($method === 'GET') {
 
             $done = $record ? intval($record['done']) >= 2 : false;
 
-            // Si tiene hora, construir datetime completo
+            //si tiene hora, construir datetime completo
             $start_dt = $routine['hour']
                 ? $date . 'T' . $routine['hour']
                 : $date;
@@ -167,13 +165,13 @@ if ($method === 'GET') {
 }
 
 
-// ── FUNCIÓN AUXILIAR ─────────────────────────────────────────
+//funciones auxiliares
 function get_days_in_range($item, $start, $end, $conn, $type = 'habit') {
     $days    = [];
     $current = new DateTime($start);
     $last    = new DateTime($end);
 
-    // Para semanal, obtener los días específicos de la BD
+    //si es semanal, se obtienen los dias
     $specific_days = [];
     if ($item['frecuency'] === 'weekly') {
         $table = $type === 'habit' ? 'habit_day' : 'routine_day';

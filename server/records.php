@@ -23,7 +23,7 @@ if ($method === 'GET') {
 
     $result = [];
 
-    // ── RESUMEN GENERAL ──────────────────────────────────────
+    //resumen general
 
     $stmt = $conn->prepare("
         SELECT COUNT(*) AS total FROM habit_record hr
@@ -70,11 +70,11 @@ if ($method === 'GET') {
         'best_streak'   => $best_streak
     ];
 
-    // ── HÁBITOS POR DÍA (barras apiladas) ────────────────────
+    // habitos por dia
 
     $days_in_month = intval(date('t', strtotime($month_start)));
 
-    // Obtener ids de los habitos del usuario
+    // obtener ids de los habits del usuario
     $stmt5 = $conn->prepare("SELECT id FROM habit WHERE user_id = ?");
     $stmt5->bind_param("i", $user_id);
     $stmt5->execute();
@@ -104,7 +104,7 @@ if ($method === 'GET') {
         $types        = str_repeat('i', $total_habits) . 's';
         $params       = array_merge($habit_ids, [$day_str]);
 
-        // done = 2
+        // done
         $s6 = $conn->prepare(
             "SELECT COUNT(*) AS c FROM habit_record
              WHERE habit_id IN ($placeholders) AND dateOfHabit = ? AND done = 2"
@@ -114,7 +114,7 @@ if ($method === 'GET') {
         $done_count = intval($s6->get_result()->fetch_assoc()['c']);
         $s6->close();
 
-        // tried = 1
+        // tried
         $s7 = $conn->prepare(
             "SELECT COUNT(*) AS c FROM habit_record
              WHERE habit_id IN ($placeholders) AND dateOfHabit = ? AND done = 1"
@@ -136,7 +136,7 @@ if ($method === 'GET') {
         'pending' => $habit_pending
     ];
 
-    // ── TAREAS (dona) ─────────────────────────────────────────
+    // grafico en dona de tasks
 
     $s8 = $conn->prepare("
         SELECT COUNT(*) AS c FROM task_record tr
@@ -176,7 +176,7 @@ if ($method === 'GET') {
         'pending' => $pending_tasks
     ];
 
-    // ── RUTINAS POR SEMANAS (línea) ───────────────────────────
+    // rutinas con grafico de lineas
 
     $routine_labels     = [];
     $routine_completion = [];
@@ -220,7 +220,7 @@ if ($method === 'GET') {
         'completion' => $routine_completion
     ];
 
-    // ── TOP 5 RACHAS ─────────────────────────────────────────
+    // top 5 de rachas
 
     $s12 = $conn->prepare("
         SELECT id, title, best_streak FROM habit
@@ -235,7 +235,7 @@ if ($method === 'GET') {
     while ($row = $r12->fetch_assoc()) { $streaks[] = $row; }
     $s12->close();
 
-    // Calcular racha actual de cada habito
+    // calculo de la racha habito
     foreach ($streaks as &$habit) {
         $s13 = $conn->prepare("
             SELECT dateOfHabit, done FROM habit_record

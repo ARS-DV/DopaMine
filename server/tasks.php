@@ -7,10 +7,10 @@ if (!isset($method)) {
     exit;
 }
 
-// GET — obtener tareas del usuario
+// GET para obtener tareas del usuario
 if ($method === 'GET') {
 
-    // Detalle de una tarea con su checklist
+    // detalle de una tarea 
     if (isset($_GET['id'])) {
         $id = intval($_GET['id']);
 
@@ -38,7 +38,7 @@ if ($method === 'GET') {
         $task['checklist'] = $checklist;
         echo json_encode($task, JSON_UNESCAPED_UNICODE);
 
-    // Tareas de hoy
+    // tasks de hoy
     } elseif (isset($_GET['user_id']) && isset($_GET['today'])) {
         $user_id = intval($_GET['user_id']);
         $today   = date('Y-m-d');
@@ -55,7 +55,7 @@ if ($method === 'GET') {
 
         echo json_encode($tasks, JSON_UNESCAPED_UNICODE);
 
-    // Tareas de esta semana
+    // tasks de esta semana
     } elseif (isset($_GET['user_id']) && isset($_GET['week'])) {
         $user_id  = intval($_GET['user_id']);
         $week_end = date('Y-m-d', strtotime('sunday this week'));
@@ -76,7 +76,7 @@ if ($method === 'GET') {
 
         echo json_encode($tasks, JSON_UNESCAPED_UNICODE);
 
-    // Caso general — todas las tareas del usuario
+    // todas las takss del usuario
     } elseif (isset($_GET['user_id'])) {
         $user_id = intval($_GET['user_id']);
 
@@ -98,7 +98,7 @@ if ($method === 'GET') {
 }
 
 
-// POST — crear tarea
+// POST para crear tarea
 if ($method === 'POST') {
     $data       = json_decode(file_get_contents('php://input'), true);
     $user_id    = intval($data['user_id']);
@@ -129,7 +129,7 @@ if ($method === 'POST') {
 }
 
 
-// PUT — editar tarea
+// PUT para editar tarea
 if ($method === 'PUT') {
     $id         = intval($_GET['id']);
     $data       = json_decode(file_get_contents('php://input'), true);
@@ -158,7 +158,7 @@ if ($method === 'PUT') {
 }
 
 
-// PATCH — marcar tarea como completada
+// PATCH para marcar tarea como completada
 if ($method === 'PATCH') {
     $id   = intval($_GET['id']);
     $data = json_decode(file_get_contents('php://input'), true);
@@ -196,7 +196,7 @@ if ($method === 'PATCH') {
 }
 
 
-// DELETE — eliminar tarea
+// DELETE para eliminar tarea
 if ($method === 'DELETE') {
     $id   = intval($_GET['id']);
     $stmt = $conn->prepare("DELETE FROM task WHERE id = ?");

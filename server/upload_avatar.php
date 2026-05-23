@@ -1,5 +1,5 @@
 <?php
-// Endpoint separado para subida de imagen — no usa JSON sino multipart/form-data
+// Endpoint para subida de imagen
 include_once 'db.php';
 
 header('Content-Type: application/json');
@@ -18,9 +18,9 @@ if (!isset($_POST['user_id']) || !isset($_FILES['avatar'])) {
 $user_id = intval($_POST['user_id']);
 $file    = $_FILES['avatar'];
 
-// Validaciones del archivo
+// valdaciones archivo
 $allowed_types = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-$max_size      = 2 * 1024 * 1024; // 2MB
+$max_size      = 2 * 1024 * 1024; // 2MB como max
 
 if ($file['error'] !== UPLOAD_ERR_OK) {
     echo json_encode(['status' => 'error', 'message' => 'Upload error']);
@@ -37,13 +37,13 @@ if ($file['size'] > $max_size) {
     exit;
 }
 
-// Crear carpeta de avatares si no existe
+// crear carpeta de avatares si no existe
 $upload_dir = __DIR__ . '/uploads/avatars/';
 if (!is_dir($upload_dir)) {
     mkdir($upload_dir, 0755, true);
 }
 
-// Borrar avatar anterior si existía
+// borrar avatar anterior 
 $stmt_old = $conn->prepare("SELECT avatar FROM user WHERE id = ?");
 $stmt_old->bind_param("i", $user_id);
 $stmt_old->execute();
@@ -57,7 +57,7 @@ if ($old_user && $old_user['avatar']) {
     }
 }
 
-// Nombre único para el archivo
+// nombre unico para el archivo
 $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
 $filename  = 'avatar_' . $user_id . '_' . time() . '.' . strtolower($extension);
 $dest      = $upload_dir . $filename;
@@ -67,7 +67,7 @@ if (!move_uploaded_file($file['tmp_name'], $dest)) {
     exit;
 }
 
-// Guardar nombre en BD
+// guardar nombre en BBDD
 $stmt = $conn->prepare("UPDATE user SET avatar = ? WHERE id = ?");
 $stmt->bind_param("si", $filename, $user_id);
 

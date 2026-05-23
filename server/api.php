@@ -1,6 +1,6 @@
 <?php
 include_once 'db.php';
-
+//header para el env de infinityfree
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, PATCH');
 header('Access-Control-Allow-Headers: Content-Type');
@@ -52,4 +52,3 @@ switch ($entity) {
         break;
 }
 ?>
-

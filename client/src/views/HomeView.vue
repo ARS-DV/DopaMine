@@ -23,12 +23,8 @@ function loadAllData() {
   errorMessage.value = "";
   //la url de tareas cambia segun el nivel de energia
   let tasksUrl = rutaApi + "?entity=tasks&user_id=" + userStore.user.id;
-  if (energyLevel.value == "high") {
+ if (energyLevel.value == "high") {
   tasksUrl = tasksUrl + "&week=1";
-} else if (energyLevel.value == "low") {
-  // sin filtro: cargamos todas y filtramos en el computed
-} else {
-  tasksUrl = tasksUrl + "&today=1";
 }
   //cargamos tareas, luego habitos, luego rutinas en cadena
   fetch(tasksUrl)
@@ -226,12 +222,12 @@ const welcomeGreeting = computed(function () {
 
 //filtra las tareas pendientes para mostrar en home
 const homeFilteredTasks = computed(function () {
-  if (energyLevel.value == "low") {
+  if (energyLevel.value == "low" || energyLevel.value == "medium") {
     let today = new Date().toISOString().split("T")[0];
     return tasksList.value.filter(function (t) {
       if (t.done) { return false; }
       let expDate = t.expDate ? t.expDate.split(" ")[0] : "";
-      return expDate <= today; //hoy o anterior (overdue)
+      return expDate <= today;
     });
   }
   return tasksList.value.filter((t) => t.done == false);

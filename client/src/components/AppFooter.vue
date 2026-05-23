@@ -7,7 +7,7 @@
 
       <!-- marca -->
       <div class="footer-brand">
-        dopamine
+        DopaMine
       </div>
 
       <!-- links -->

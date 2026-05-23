@@ -15,10 +15,41 @@ const showPassword = ref(false)
 
 // validacion estricta de contraseña
 function validatePassword(pswd) {
-  if (pswd.length < 10)        return 'Password must be at least 10 characters'
-  if (!/[A-Z]/.test(pswd))     return 'Password must contain at least one uppercase letter'
-  if (!/[a-z]/.test(pswd))     return 'Password must contain at least one lowercase letter'
-  if (!/[0-9]/.test(pswd))     return 'Password must contain at least one number'
+  //comprobamos longitud minima
+  if (pswd.length < 10) {
+    return 'Password must be at least 10 characters'
+  }
+
+  //comprobamos que tiene al menos una mayuscula
+  let hasUpper = false
+  let upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+  for (let i = 0; i < pswd.length; i++) {
+    if (upper.includes(pswd[i])) { hasUpper = true }
+  }
+  if (hasUpper == false) {
+    return 'Password must contain at least one uppercase letter'
+  }
+
+  //comprobamos que tiene al menos una minuscula
+  let hasLower = false
+  let lower = 'abcdefghijklmnopqrstuvwxyz'
+  for (let i = 0; i < pswd.length; i++) {
+    if (lower.includes(pswd[i])) { hasLower = true }
+  }
+  if (hasLower == false) {
+    return 'Password must contain at least one lowercase letter'
+  }
+
+  //comprobamos que tiene al menos un numero
+  let hasNum = false
+  let numbers = '0123456789'
+  for (let i = 0; i < pswd.length; i++) {
+    if (numbers.includes(pswd[i])) { hasNum = true }
+  }
+  if (hasNum == false) {
+    return 'Password must contain at least one number'
+  }
+
   return null
 }
 
@@ -51,7 +82,6 @@ async function registerUser() {
   }
 
   //validacion contraseña
-  //TODO: requerir una contraseña más compleja
   let pswdError = validatePassword(passwordInput.value)
   if (pswdError) {
     errorMessage.value = pswdError

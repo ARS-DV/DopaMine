@@ -103,24 +103,24 @@ function getCountdown(dateStr) {
   let diffWeeks = Math.floor(diffDays / 7);
   let diffMonths = Math.floor(diffDays / 30);
 
-  //menos de 24h: mostramos horas y minutos
+  //si <24h se muestra horas y minutos
   if (diffHours < 24) {
     return { mode: "hours", hours: diffHours, minutes: diffMinutes % 60 };
   }
 
-  //menos de 7 dias: mostramos dias
+  //si <7 dias se muestran dias
   if (diffDays < 7) {
     return { mode: "days", days: diffDays };
   }
 
-  //menos de 30 dias: mostramos semanas y dias restantes
+  //si <30 dias se muestra semanas y dias restantes
   if (diffDays < 30) {
     let weeks = diffWeeks;
     let remainDays = diffDays - weeks * 7;
     return { mode: "weeks", weeks: weeks, days: remainDays };
   }
 
-  //mas de un mes: mostramos meses y semanas
+  //> 1mes se muestra meses y semanas
   let months = diffMonths;
   let remainWeeks = Math.floor((diffDays - months * 30) / 7);
   return { mode: "months", months: months, weeks: remainWeeks };
@@ -182,7 +182,6 @@ function getTypeIcon(type) {
     </div>
 
     <div class="row g-4">
-      <!-- calendario: ocupa menos espacio si hay panel abierto -->
       <div :class="selectedEvent ? 'col-12 col-lg-8' : 'col-12'">
         <div class="calendar-card fade-up delay-1">
           <FullCalendar :options="calendarOptions" />

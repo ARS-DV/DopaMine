@@ -553,7 +553,7 @@ onMounted(function () {
   margin: 0 auto;
 }
 
-/* adaptacion de móvil */
+/* adaptacion de movil */
 @media (max-width: 768px) {
   .edittask-wrapper {
     padding: 1.5rem 1rem 4rem;

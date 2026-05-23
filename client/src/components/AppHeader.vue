@@ -7,10 +7,10 @@ const userStore = useUserStore()
 const router    = useRouter()
 const route     = useRoute()
 
-const dropdown       = ref(false)  // dropdown de vistas en desktop
-const mobileMenuOpen = ref(false)  // menú hamburguesa en móvil
+const dropdown       = ref(false)  // dropdown de vistas 
+const mobileMenuOpen = ref(false)  // menu hamburguesa 
 
-const avatarBase = 'http://aruisie.infinityfreeapp.com/DopaMine_Server/uploads/avatars/'
+const avatarBase = 'https://aruisie.infinityfreeapp.com/DopaMine_Server/uploads/avatars/'
 
 function logout() {
   mobileMenuOpen.value = false
@@ -27,7 +27,7 @@ function closeMobileMenu() {
   mobileMenuOpen.value = false
 }
 
-// nombre de la vista actual para el botón del dropdown
+// nombre de la vista actual 
 const currentViewName = computed(function() {
   let path = route.path
   if (path === '/' || path === '/home') return 'Today'
@@ -60,7 +60,7 @@ const initials = computed(function() {
   <header class="app-header" role="banner">
     <div class="header-inner">
 
-      <!-- LOGO -->
+      <!-- logo -->
       <RouterLink to="/" class="header-logo" aria-label="DopaMine — go to home">
         <img
           src="../assets/logo.png"
@@ -72,7 +72,7 @@ const initials = computed(function() {
         DopaMine
       </RouterLink>
 
-      <!-- ── DESKTOP NAV (oculto en móvil) ── -->
+      <!-- navegaor para desk -->
       <nav v-if="!userStore.isLogged()" class="header-nav desktop-nav" aria-label="Authentication">
         <RouterLink to="/login"  class="btn-dopamine btn-dopamine-ghost">
           <i class="bi bi-box-arrow-in-right me-1" aria-hidden="true"></i>Sign In
@@ -84,7 +84,7 @@ const initials = computed(function() {
 
       <nav v-else class="header-nav desktop-nav" aria-label="Main navigation">
 
-        <!-- DROPDOWN VISTAS -->
+        <!-- VISTAS -->
         <div class="header-dropdown-wrap">
           <button
             class="btn-dopamine btn-dopamine-ghost header-dropdown-btn"
@@ -113,7 +113,7 @@ const initials = computed(function() {
 
         <div class="header-sep" aria-hidden="true"></div>
 
-        <!-- AVATAR + NOMBRE -->
+        <!-- avatar + nombre -->
         <RouterLink
           to="/profile"
           class="header-user-link"
@@ -126,7 +126,7 @@ const initials = computed(function() {
 
         <div class="header-sep" aria-hidden="true"></div>
 
-        <!-- LOGOUT -->
+        <!-- logout -->
         <button class="btn-dopamine btn-dopamine-ghost header-logout-btn" aria-label="Sign out" @click="logout">
           <i class="bi bi-box-arrow-right me-1" aria-hidden="true"></i>
           <span class="logout-label">Sign Out</span>
@@ -134,7 +134,7 @@ const initials = computed(function() {
 
       </nav>
 
-      <!-- ── HAMBURGUESA (solo móvil) ── -->
+      <!-- navegador hamburguesa para movil -->
       <button
         v-if="userStore.isLogged()"
         class="hamburger-btn mobile-only"
@@ -146,7 +146,7 @@ const initials = computed(function() {
         <i class="bi" :class="mobileMenuOpen ? 'bi-x-lg' : 'bi-list'" aria-hidden="true"></i>
       </button>
 
-      <!-- Botones login/singup en móvil sin login -->
+      <!-- botones login y singup -->
       <nav v-if="!userStore.isLogged()" class="header-nav mobile-auth-nav mobile-only" aria-label="Authentication">
         <RouterLink to="/login"  class="btn-dopamine btn-dopamine-ghost btn-sm-mobile">Sign In</RouterLink>
         <RouterLink to="/singup" class="btn-dopamine btn-dopamine-primary btn-sm-mobile">Sign Up</RouterLink>
@@ -154,14 +154,14 @@ const initials = computed(function() {
 
     </div>
 
-    <!-- ── PANEL MÓVIL ── -->
+    <!-- ── panel movil ── -->
     <nav
       v-if="mobileMenuOpen && userStore.isLogged()"
       id="mobile-menu"
       class="mobile-menu"
       aria-label="Mobile navigation"
     >
-      <!-- PERFIL -->
+      <!-- profile -->
       <RouterLink to="/profile" class="mobile-profile-row" @click="closeMobileMenu">
         <img v-if="avatarUrl" :src="avatarUrl" :alt="userStore.user.nickName + ' profile picture'" class="mobile-avatar-img">
         <div v-else class="mobile-avatar-initials" aria-hidden="true">{{ initials }}</div>
@@ -174,7 +174,7 @@ const initials = computed(function() {
 
       <div class="mobile-divider" aria-hidden="true"></div>
 
-      <!-- NAVEGACIÓN -->
+      <!-- nav -->
       <div class="mobile-nav-links">
         <RouterLink to="/home"     class="mobile-nav-link" @click="closeMobileMenu"><i class="bi bi-sun" aria-hidden="true"></i> Today</RouterLink>
         <RouterLink to="/tasks"    class="mobile-nav-link" @click="closeMobileMenu"><i class="bi bi-check2-square" aria-hidden="true"></i> Tasks</RouterLink>
@@ -189,7 +189,7 @@ const initials = computed(function() {
 
       <div class="mobile-divider" aria-hidden="true"></div>
 
-      <!-- LOGOUT -->
+      <!-- logout -->
       <button class="mobile-logout-btn" aria-label="Sign out of your account" @click="logout">
         <i class="bi bi-box-arrow-right me-2" aria-hidden="true"></i> Sign Out
       </button>
@@ -199,7 +199,7 @@ const initials = computed(function() {
 </template>
 
 <style scoped>
-/* ── HEADER BASE ── */
+/* HEADER */
 .app-header {
   background-color: var(--cinnamon-dark);
   position: sticky;
@@ -213,7 +213,7 @@ const initials = computed(function() {
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 2rem;
-  height: 72px; /* un poco más grande que antes (era 64px) */
+  height: 72px; 
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -223,7 +223,7 @@ const initials = computed(function() {
 /* LOGO */
 .header-logo {
   font-family: var(--font-serif);
-  font-size: 1.35rem; /* ligeramente más grande */
+  font-size: 1.35rem; 
   font-weight: 700;
   color: var(--bg-base);
   text-decoration: none;
@@ -245,13 +245,12 @@ const initials = computed(function() {
 .header-logo:hover { color: var(--vanilla-light); }
 .header-logo:focus-visible { outline: 2px solid var(--vanilla-light); outline-offset: 4px; border-radius: 4px; }
 
-/* NAV */
+/* nav */
 .header-nav { display: flex; align-items: center; gap: 0.75rem; }
 
-/* SEPARADOR VERTICAL */
 .header-sep { width: 1px; height: 26px; background: rgba(237, 217, 163, 0.25); flex-shrink: 0; }
 
-/* BOTONES EN HEADER */
+/* botones header */
 .app-header .btn-dopamine-ghost {
   color: var(--bg-base);
   border-color: rgba(237, 217, 163, 0.35);
@@ -335,7 +334,7 @@ const initials = computed(function() {
 
 .header-logout-btn { display: flex; align-items: center; gap: 0.3rem; }
 
-/* ── HAMBURGUESA ── */
+/* nav hamburguesa*/
 .hamburger-btn {
   background: none;
   border: 1.5px solid rgba(237, 217, 163, 0.4);
@@ -355,7 +354,7 @@ const initials = computed(function() {
 .hamburger-btn:hover { background: rgba(255,255,255,0.1); }
 .hamburger-btn:focus-visible { outline: 2px solid var(--vanilla-light); outline-offset: 3px; }
 
-/* ── PANEL MÓVIL ── */
+/*panel movil */
 .mobile-menu {
   background: var(--cinnamon-dark);
   border-top: 1px solid rgba(237, 217, 163, 0.15);
@@ -391,7 +390,7 @@ const initials = computed(function() {
 
 .mobile-divider { height: 1px; background: rgba(237, 217, 163, 0.12); margin: 0.3rem 0; }
 
-/* links de navegación */
+/* links de navegacion */
 .mobile-nav-links { display: flex; flex-direction: column; padding: 0.3rem 0; }
 
 .mobile-nav-link {
@@ -419,7 +418,7 @@ const initials = computed(function() {
 
 .mobile-nav-link:focus-visible { outline: 2px solid var(--vanilla-light); outline-offset: -2px; }
 
-/* logout móvil */
+/* logout movil */
 .mobile-logout-btn {
   display: flex;
   align-items: center;
@@ -440,7 +439,6 @@ const initials = computed(function() {
 .mobile-logout-btn:hover { background: rgba(255,255,255,0.1); color: var(--vanilla-light); }
 .mobile-logout-btn:focus-visible { outline: 2px solid var(--vanilla-light); outline-offset: 3px; }
 
-/* ── VISIBILIDAD POR BREAKPOINT ── */
 .desktop-nav  { display: flex; }
 .mobile-only  { display: none; }
 .mobile-auth-nav { display: none; }

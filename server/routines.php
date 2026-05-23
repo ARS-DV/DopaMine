@@ -7,10 +7,10 @@ if (!isset($method)) {
     exit;
 }
 
-// GET — obtener rutinas del usuario
+// GET para obtener rutinas del usuario
 if ($method === 'GET') {
 
-    // Detalle de una rutina
+    // detalle completo de una rutina por id
     if (isset($_GET['id'])) {
         $id = intval($_GET['id']);
 
@@ -25,6 +25,7 @@ if ($method === 'GET') {
             exit;
         }
 
+        // cargar los pasos del checklist
         $stmt3 = $conn->prepare(
             "SELECT * FROM routine_checklist WHERE routine_id = ? ORDER BY sort_order ASC"
         );
@@ -32,9 +33,14 @@ if ($method === 'GET') {
         $stmt3->execute();
         $r3        = $stmt3->get_result();
         $checklist = [];
-        while ($row = $r3->fetch_assoc()) $checklist[] = $row;
+        while ($row = $r3->fetch_assoc()) {
+            // paso solo considerado si se marca hoy
+            $row['done'] = ($row['done'] == 1 && $row['last_done_date'] == date('Y-m-d')) ? 1 : 0;
+            $checklist[] = $row;
+        }
         $stmt3->close();
 
+        //se carga los dias de la semana si es semanal
         $stmt4 = $conn->prepare("SELECT dayOfWeek FROM routine_day WHERE routine_id = ?");
         $stmt4->bind_param("i", $id);
         $stmt4->execute();
@@ -48,12 +54,13 @@ if ($method === 'GET') {
 
         echo json_encode($routine, JSON_UNESCAPED_UNICODE);
 
-    // Rutinas de hoy
+    //comprobar si toca hoy
     } elseif (isset($_GET['user_id']) && isset($_GET['today'])) {
         $user_id      = intval($_GET['user_id']);
         $today_name   = strtolower(date('l'));
         $day_of_month = intval(date('j'));
 
+        //stament de la rutina si toca hoy
         $stmt = $conn->prepare("
             SELECT r.*,
                    COALESCE((SELECT done FROM routine_record
@@ -76,9 +83,29 @@ if ($method === 'GET') {
         while ($row = $result->fetch_assoc()) $routines[] = $row;
         $stmt->close();
 
+        // se cargan los checklist
+        foreach ($routines as &$routine) {
+            $sc = $conn->prepare(
+                "SELECT * FROM routine_checklist WHERE routine_id = ? ORDER BY sort_order ASC"
+            );
+            $sc->bind_param("i", $routine['id']);
+            $sc->execute();
+            $rc        = $sc->get_result();
+            $checklist = [];
+            while ($c = $rc->fetch_assoc()) {
+                $c['done'] = ($c['done'] == 1 && $c['last_done_date'] == date('Y-m-d')) ? 1 : 0;
+                $checklist[] = $c;
+            }
+            $sc->close();
+
+            $routine['checklist']   = $checklist;
+            $routine['total_steps'] = count($checklist);
+            $routine['done_steps']  = count(array_filter($checklist, fn($c) => $c['done']));
+        }
+
         echo json_encode($routines, JSON_UNESCAPED_UNICODE);
 
-    // Todas las rutinas del usuario
+    // todas las rutinas del usuario con todos sus atributos
     } elseif (isset($_GET['user_id'])) {
         $user_id = intval($_GET['user_id']);
 
@@ -92,7 +119,7 @@ if ($method === 'GET') {
 
         foreach ($routines as &$routine) {
 
-            // Días
+            //dias de la semana con frecuencial semanal
             $s1 = $conn->prepare("SELECT dayOfWeek FROM routine_day WHERE routine_id = ?");
             $s1->bind_param("i", $routine['id']);
             $s1->execute();
@@ -102,9 +129,7 @@ if ($method === 'GET') {
             $s1->close();
             $routine['days'] = $days;
 
-            // ✅ Eliminada la query de routine_habit — rutinas ya no contienen hábitos
-
-            // Checklist de pasos
+            // pasos del checklist
             $s3 = $conn->prepare(
                 "SELECT * FROM routine_checklist WHERE routine_id = ? ORDER BY sort_order ASC"
             );
@@ -112,13 +137,17 @@ if ($method === 'GET') {
             $s3->execute();
             $r3        = $s3->get_result();
             $checklist = [];
-            while ($c = $r3->fetch_assoc()) $checklist[] = $c;
+            while ($c = $r3->fetch_assoc()) {
+                //paso solo considerado si es marcado hoy
+                $c['done'] = ($c['done'] == 1 && $c['last_done_date'] == date('Y-m-d')) ? 1 : 0;
+                $checklist[] = $c;
+            }
             $s3->close();
-            $routine['checklist']    = $checklist;
-            $routine['total_steps']  = count($checklist);
-            $routine['done_steps']   = count(array_filter($checklist, fn($c) => $c['done']));
+            $routine['checklist']   = $checklist;
+            $routine['total_steps'] = count($checklist);
+            $routine['done_steps']  = count(array_filter($checklist, fn($c) => $c['done']));
 
-            // Estado de hoy
+            // estado de hoy desde routine_record
             $s4 = $conn->prepare(
                 "SELECT done FROM routine_record WHERE routine_id = ? AND dateOfRoutine = CURDATE()"
             );
@@ -128,7 +157,7 @@ if ($method === 'GET') {
             $s4->close();
             $routine['done_today'] = $today_rec ? intval($today_rec['done']) : 0;
 
-            // Racha actual
+            // racha actual
             $s5 = $conn->prepare("
                 SELECT dateOfRoutine, done FROM routine_record
                 WHERE routine_id = ? ORDER BY dateOfRoutine DESC
@@ -160,7 +189,7 @@ if ($method === 'GET') {
 }
 
 
-// POST — crear rutina
+// POST para crear rutina con dias y pasos
 if ($method === 'POST') {
     $data       = json_decode(file_get_contents('php://input'), true);
     $user_id    = intval($data['user_id']);
@@ -177,6 +206,7 @@ if ($method === 'POST') {
     $conn->begin_transaction();
 
     try {
+        //insertamos la rutina principal
         $stmt = $conn->prepare(
             "INSERT INTO routine (user_id, title, descrip, icon, hour, color, frecuency, dayOfMonth)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
@@ -186,12 +216,14 @@ if ($method === 'POST') {
         $routine_id = $conn->insert_id;
         $stmt->close();
 
+        // insertamos los dias si es semanal
         if ($frecuency === 'weekly' && !empty($days)) {
             $s2 = $conn->prepare("INSERT INTO routine_day (routine_id, dayOfWeek) VALUES (?, ?)");
             foreach ($days as $day) { $s2->bind_param("is", $routine_id, $day); $s2->execute(); }
             $s2->close();
         }
 
+        // insertamos los pasos del checklist
         if (!empty($steps)) {
             $s4 = $conn->prepare(
                 "INSERT INTO routine_checklist (routine_id, title, sort_order) VALUES (?, ?, ?)"
@@ -214,7 +246,7 @@ if ($method === 'POST') {
 }
 
 
-// PUT — editar rutina
+// PUT para editar rutina
 if ($method === 'PUT') {
     $id         = intval($_GET['id']);
     $data       = json_decode(file_get_contents('php://input'), true);
@@ -230,6 +262,7 @@ if ($method === 'PUT') {
     $conn->begin_transaction();
 
     try {
+        // actualizacion de datos principales
         $stmt = $conn->prepare(
             "UPDATE routine SET title=?, descrip=?, icon=?, hour=?, color=?, frecuency=?, dayOfMonth=? WHERE id=?"
         );
@@ -237,6 +270,7 @@ if ($method === 'PUT') {
         $stmt->execute();
         $stmt->close();
 
+        // borrados de dias anteriores y lo vovlvemos a poner
         $s2 = $conn->prepare("DELETE FROM routine_day WHERE routine_id = ?");
         $s2->bind_param("i", $id);
         $s2->execute();
@@ -258,7 +292,7 @@ if ($method === 'PUT') {
 }
 
 
-// PATCH — actualizar estado según % completitud
+// PATCH para recalcular y guardar el estado 
 if ($method === 'PATCH') {
     $id    = intval($_GET['id']);
     $data  = json_decode(file_get_contents('php://input'), true);
@@ -267,11 +301,13 @@ if ($method === 'PATCH') {
     $done_steps  = intval($data['done_steps']);
     $total_steps = intval($data['total_steps']);
 
+    // pending,tried o done segun porentaje
     $pct  = $total_steps > 0 ? ($done_steps / $total_steps) * 100 : 0;
     $done = 0;
     if ($pct >= 100)    $done = 2;
     elseif ($pct >= 50) $done = 1;
 
+    // actualizacion o registro de hoy
     $stmt = $conn->prepare(
         "SELECT id FROM routine_record WHERE routine_id = ? AND dateOfRoutine = ?"
     );
@@ -297,6 +333,7 @@ if ($method === 'PATCH') {
         $s2->close();
     }
 
+    // calcular la racha actual
     $streak = 0;
     $s3 = $conn->prepare(
         "SELECT dateOfRoutine, done FROM routine_record WHERE routine_id = ? ORDER BY dateOfRoutine DESC"
@@ -317,6 +354,7 @@ if ($method === 'PATCH') {
         } elseif ($date < $expected) break;
     }
 
+    // actualizar la mejor racha si se supera
     if ($done === 2) {
         $s4 = $conn->prepare(
             "UPDATE routine SET best_streak = GREATEST(best_streak, ?) WHERE id = ?"
@@ -336,7 +374,7 @@ if ($method === 'PATCH') {
 }
 
 
-// DELETE — eliminar rutina
+// DELETE para eliminar rutina y todo lo relacionado por cascade
 if ($method === 'DELETE') {
     $id   = intval($_GET['id']);
     $stmt = $conn->prepare("DELETE FROM routine WHERE id = ?");

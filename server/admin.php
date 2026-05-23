@@ -7,16 +7,16 @@ if (!isset($method)) {
     exit;
 }
 
-// GET — obtener todos los usuarios con sus estadísticas
+// GET para obtener todos los usuarios con sus estadisticas
 if ($method === 'GET') {
 
-    // Solo permite acceso si se confirma que el solicitante es admin
+    //acceso unico al admin
     if (!isset($_GET['requester_id'])) {
         echo json_encode(['status' => 'error', 'message' => 'requester_id is required']);
         exit;
     }
 
-    // Verificar que el solicitante es admin
+    //verificacion del admin
     $requester_id = intval($_GET['requester_id']);
     $check = $conn->prepare("SELECT role FROM user WHERE id = ?");
     $check->bind_param("i", $requester_id);
@@ -30,7 +30,7 @@ if ($method === 'GET') {
         exit;
     }
 
-    // Obtener todos los usuarios
+    //obtener todos los usuarios
     $stmt = $conn->prepare("SELECT id, nickName, email, role, createdDate FROM user ORDER BY createdDate DESC");
     $stmt->execute();
     $result = $stmt->get_result();
@@ -38,23 +38,23 @@ if ($method === 'GET') {
     while ($row = $result->fetch_assoc()) $users[] = $row;
     $stmt->close();
 
-    // Añadir estadísticas a cada usuario
+    //añadir estadisticas de usuarios
     foreach ($users as &$user) {
-        // Número de hábitos
+        //num habits
         $s1 = $conn->prepare("SELECT COUNT(*) AS total FROM habit WHERE user_id = ?");
         $s1->bind_param("i", $user['id']);
         $s1->execute();
         $user['habits_count'] = intval($s1->get_result()->fetch_assoc()['total']);
         $s1->close();
 
-        // Número de tareas
+        //num tasks
         $s2 = $conn->prepare("SELECT COUNT(*) AS total FROM task WHERE user_id = ?");
         $s2->bind_param("i", $user['id']);
         $s2->execute();
         $user['tasks_count'] = intval($s2->get_result()->fetch_assoc()['total']);
         $s2->close();
 
-        // Número de rutinas
+        //num routines
         $s3 = $conn->prepare("SELECT COUNT(*) AS total FROM routine WHERE user_id = ?");
         $s3->bind_param("i", $user['id']);
         $s3->execute();
@@ -69,7 +69,7 @@ if ($method === 'GET') {
 }
 
 
-// PATCH — cambiar el rol de un usuario
+// PATCH para cambiar rol usuario
 if ($method === 'PATCH') {
 
     $data         = json_decode(file_get_contents('php://input'), true);
@@ -77,13 +77,13 @@ if ($method === 'PATCH') {
     $requester_id = intval($data['requester_id']);
     $new_role     = $data['role'];
 
-    // Validar que el rol sea válido
+    //validacion rol valido
     if ($new_role !== 'user' && $new_role !== 'admin') {
         echo json_encode(['status' => 'error', 'message' => 'Invalid role']);
         exit;
     }
 
-    // Verificar que el solicitante es admin
+    //verificar que solicitante sea admin
     $check = $conn->prepare("SELECT role FROM user WHERE id = ?");
     $check->bind_param("i", $requester_id);
     $check->execute();
@@ -96,7 +96,7 @@ if ($method === 'PATCH') {
         exit;
     }
 
-    // No permitir que el admin se quite el rol a sí mismo
+    //prohiir que el admin se quite el rol a si mismo
     if ($target_id === $requester_id) {
         echo json_encode(['status' => 'error', 'message' => 'You cannot change your own role']);
         exit;
@@ -114,14 +114,14 @@ if ($method === 'PATCH') {
 }
 
 
-// DELETE — eliminar un usuario y todos sus datos
+// DELETE para eliminar usuario y todos sus datos
 if ($method === 'DELETE') {
 
     $target_id    = intval($_GET['id']);
     $data         = json_decode(file_get_contents('php://input'), true);
     $requester_id = intval($data['requester_id']);
 
-    // Verificar que el solicitante es admin
+    //verificar que sea admin quien lo elimine
     $check = $conn->prepare("SELECT role FROM user WHERE id = ?");
     $check->bind_param("i", $requester_id);
     $check->execute();
@@ -134,13 +134,13 @@ if ($method === 'DELETE') {
         exit;
     }
 
-    // No permitir que el admin se elimine a sí mismo
+    //prohibir al admin eliminarse a si mismo
     if ($target_id === $requester_id) {
         echo json_encode(['status' => 'error', 'message' => 'You cannot delete your own account']);
         exit;
     }
 
-    // El CASCADE de las FK se encarga de borrar hábitos, tareas, rutinas, etc.
+    //se borran los datos por el CASCADE
     $stmt = $conn->prepare("DELETE FROM user WHERE id = ?");
     $stmt->bind_param("i", $target_id);
 

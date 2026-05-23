@@ -287,7 +287,6 @@ onMounted(function () {
           role="listitem"
         >
           <div class="habit-card-body">
-            <!-- izquierda: boton de estado y datos del habito -->
             <div class="d-flex align-items-center gap-3 flex-grow-1">
               <!-- boton circular para ciclar el estado -->
               <button
@@ -326,7 +325,7 @@ onMounted(function () {
                 ></i>
               </button>
 
-              <!-- informacion del habito: titulo, badges y frecuencia -->
+              <!-- info del habito: titulo, badges y frecuencia -->
               <div class="flex-grow-1" style="min-width: 0">
                 <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
                   <span class="habit-title">
@@ -386,7 +385,7 @@ onMounted(function () {
               </div>
             </div>
 
-            <!-- derecha: racha, boton editar y boton borrar -->
+            <!-- racha, boton editar y boton borrar -->
             <div class="d-flex align-items-center gap-2 flex-shrink-0">
               <div
                 class="habit-streak text-center"
