@@ -32,13 +32,13 @@ onMounted(function () {
           <RouterLink
             to="/login"
             class="btn-dopamine btn-dopamine-ghost landing-nav-btn"
-          >
+          ><i class="bi bi-box-arrow-in-right me-2"></i>
             Sign In
           </RouterLink>
           <RouterLink
             to="/singup"
             class="btn-dopamine btn-dopamine-primary landing-nav-btn"
-          >
+          ><i class="bi bi-person-plus me-2" aria-hidden="true"></i>
             Sign Up
           </RouterLink>
         </div>

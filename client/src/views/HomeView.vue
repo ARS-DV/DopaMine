@@ -230,6 +230,7 @@ const homeFilteredTasks = computed(function () {
       return expDate <= today;
     });
   }
+  
   return tasksList.value.filter((t) => t.done == false);
 });
 

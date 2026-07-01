@@ -75,10 +75,10 @@ const initials = computed(function() {
       <!-- navegaor para desk -->
       <nav v-if="!userStore.isLogged()" class="header-nav desktop-nav" aria-label="Authentication">
         <RouterLink to="/login"  class="btn-dopamine btn-dopamine-ghost">
-          <i class="bi bi-box-arrow-in-right me-1" aria-hidden="true"></i>Sign In
+          <i class="bi bi-person-plus me-2" aria-hidden="true"></i>Sign In
         </RouterLink>
         <RouterLink to="/singup" class="btn-dopamine btn-dopamine-primary">
-          <i class="bi bi-person-plus me-1" aria-hidden="true"></i>Sign Up
+          <i class="bi bi-person-plus me-2" aria-hidden="true"></i>Sign Up
         </RouterLink>
       </nav>
 

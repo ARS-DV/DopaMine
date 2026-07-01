@@ -337,7 +337,7 @@ onMounted(function() {
                 v-model="pswdInput"
                 :type="showPswd ? 'text' : 'password'"
                 class="form-control dopamine-input input-lg"
-                placeholder="Min. 7 characters"
+                placeholder="Min. 10 characters"
                 autocomplete="new-password"
                 aria-describedby="pswd-hint"
               >
@@ -351,7 +351,7 @@ onMounted(function() {
                 <i class="bi" :class="showPswd ? 'bi-eye-slash' : 'bi-eye'" aria-hidden="true"></i>
               </button>
             </div>
-            <p id="pswd-hint" class="field-hint mt-1">Minimum 7 characters</p>
+            <p id="pswd-hint" class="field-hint mt-1">Minimum 10 characters</p>
           </div>
 
           <!-- Confirmar contraseña -->

@@ -18,6 +18,7 @@ import EditRoutineView from "@/views/EditRoutineView.vue";
 import AdminView     from "@/views/AdminView.vue";
 import ProfileView   from "@/views/ProfileView.vue";
 import EditHabitView from "@/views/EditHabitView.vue";
+import ArchiveTasksView from "@/views/ArchiveTasksView.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -44,6 +45,7 @@ const router = createRouter({
     { path: "/tasks/edit/:id",    component: EditTaskView,    meta: { hideHeader: true } },
     { path: "/routines/edit/:id", component: EditRoutineView, meta: { hideHeader: true } },
     { path: "/habits/edit/:id",   component: EditHabitView,   meta: { hideHeader: true } },
+    { path: "/tasks/archive", component: ArchiveTasksView, meta: { hideHeader: false } },
   ],
 });
 

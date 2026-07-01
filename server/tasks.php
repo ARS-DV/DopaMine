@@ -7,10 +7,10 @@ if (!isset($method)) {
     exit;
 }
 
-// GET para obtener tareas del usuario
+// GET — obtener tareas del usuario
 if ($method === 'GET') {
 
-    // detalle de una tarea 
+    // Detalle de una tarea con su checklist
     if (isset($_GET['id'])) {
         $id = intval($_GET['id']);
 
@@ -38,15 +38,18 @@ if ($method === 'GET') {
         $task['checklist'] = $checklist;
         echo json_encode($task, JSON_UNESCAPED_UNICODE);
 
-    // tasks de hoy
+    // Tareas de hoy
     } elseif (isset($_GET['user_id']) && isset($_GET['today'])) {
         $user_id = intval($_GET['user_id']);
         $today   = date('Y-m-d');
 
-        $stmt = $conn->prepare(
-            "SELECT * FROM task WHERE user_id = ? AND DATE(expDate) = ? ORDER BY difficulty ASC"
-        );
-        $stmt->bind_param("is", $user_id, $today);
+       $stmt = $conn->prepare(
+    "SELECT * FROM task
+     WHERE user_id = ? AND done = 0
+     AND DATE(expDate) BETWEEN ? AND ?
+     ORDER BY expDate ASC"
+);
+$stmt->bind_param("iss", $user_id, $today, $week_end);
         $stmt->execute();
         $result = $stmt->get_result();
         $tasks  = [];
@@ -55,7 +58,7 @@ if ($method === 'GET') {
 
         echo json_encode($tasks, JSON_UNESCAPED_UNICODE);
 
-    // tasks de esta semana
+    // Tareas de esta semana
     } elseif (isset($_GET['user_id']) && isset($_GET['week'])) {
         $user_id  = intval($_GET['user_id']);
         $week_end = date('Y-m-d', strtotime('sunday this week'));
@@ -76,12 +79,16 @@ if ($method === 'GET') {
 
         echo json_encode($tasks, JSON_UNESCAPED_UNICODE);
 
-    // todas las takss del usuario
+    // caso general — todas las tareas del usuario con su campo onTime si existe
     } elseif (isset($_GET['user_id'])) {
         $user_id = intval($_GET['user_id']);
 
         $stmt = $conn->prepare(
-            "SELECT * FROM task WHERE user_id = ? ORDER BY expDate ASC"
+            "SELECT t.*, tr.onTime
+             FROM task t
+             LEFT JOIN task_record tr ON tr.task_id = t.id
+             WHERE t.user_id = ?
+             ORDER BY t.expDate ASC"
         );
         $stmt->bind_param("i", $user_id);
         $stmt->execute();
@@ -98,7 +105,7 @@ if ($method === 'GET') {
 }
 
 
-// POST para crear tarea
+// POST — crear tarea
 if ($method === 'POST') {
     $data       = json_decode(file_get_contents('php://input'), true);
     $user_id    = intval($data['user_id']);
@@ -129,7 +136,7 @@ if ($method === 'POST') {
 }
 
 
-// PUT para editar tarea
+// PUT — editar tarea
 if ($method === 'PUT') {
     $id         = intval($_GET['id']);
     $data       = json_decode(file_get_contents('php://input'), true);
@@ -158,7 +165,7 @@ if ($method === 'PUT') {
 }
 
 
-// PATCH para marcar tarea como completada
+// PATCH — marcar tarea como completada
 if ($method === 'PATCH') {
     $id   = intval($_GET['id']);
     $data = json_decode(file_get_contents('php://input'), true);
@@ -196,7 +203,7 @@ if ($method === 'PATCH') {
 }
 
 
-// DELETE para eliminar tarea
+// DELETE — eliminar tarea
 if ($method === 'DELETE') {
     $id   = intval($_GET['id']);
     $stmt = $conn->prepare("DELETE FROM task WHERE id = ?");
